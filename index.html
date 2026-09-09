@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة العلوم - النافذة الجانبية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800;900&display=swap');
+
+        :root {
+            --app-bg: #1e293b;
+            --surface-bg: #0f172a;
+            --card-bg: #334155;
+            --text-color: #f8fafc;
+            --border-color: #475569;
+            --gold: #f59e0b;
+        }
+
+        body.light-mode {
+            --app-bg: #ffffff;
+            --surface-bg: #f1f5f9;
+            --card-bg: #e2e8f0;
+            --text-color: #0f172a;
+            --border-color: #cbd5e1;
+            --gold: #d97706;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: transparent;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #toggle-panel-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: auto;
+            z-index: 10001;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .phone-widget {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            right: auto;
+            width: 390px;
+            max-width: calc(100vw - 30px);
+            height: calc(100vh - 30px);
+            background-color: var(--app-bg);
+            color: var(--text-color);
+            border-radius: 28px;
+            border: 2px solid var(--border-color);
+            box-shadow: 8px 12px 35px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+        }
+
+        .phone-widget.minimized {
+            transform: translateX(-115%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* كرت عرض الفائز بخط عريض وواضح */
+        .student-result-card {
+            background-color: var(--surface-bg);
+            border: 2px solid #38bdf8;
+            min-height: 72px;
+            max-height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6px 12px;
+            border-radius: 16px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .student-result-name {
+            font-size: clamp(1.2rem, 4.5vw, 1.55rem);
+            font-weight: 900;
+            line-height: 1.25;
+            color: #38bdf8;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .mini-rotator {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #f59e0b, #e11d48);
+            border-radius: 4px;
+            animation: fast-spin 0.35s linear infinite;
+            animation-play-state: paused;
+        }
+
+        @keyframes fast-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* عنصر قائمة الطلاب: خط عريض وواضح */
+        .student-item {
+            background-color: var(--surface-bg);
+            border: 1.5px solid var(--border-color);
+            font-weight: 800;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+
+        .student-item:hover { 
+            border-color: #38bdf8;
+            transform: translateX(-2px);
+        }
+
+        .student-item.has-stars {
+            border-color: var(--gold);
+            background-color: rgba(245, 158, 11, 0.18);
+        }
+
+        .confetti-piece {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            z-index: 10002;
+            pointer-events: none;
+            animation: drop-confetti 2s linear forwards;
+        }
+
+        @keyframes drop-confetti {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0.6cm;
+            }
+            body { background: white !important; color: black !important; }
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal { display: none !important; }
+            .print-area { display: block !important; }
+        }
+        .print-area { display: none; }
+    </style>
+</head>
+<body>
+
+    <button id="toggle-panel-btn" class="p-3 bg-sky-600 hover:bg-sky-500 text-white rounded-full flex items-center justify-center transition" title="إظهار / طي النافذة">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7"></path>
+        </svg>
+    </button>
+
+    <aside id="phone-panel" class="phone-widget">
+        <!-- الرأس -->
+        <header class="p-2.5 border-b border-slate-700/60 bg-slate-900/40 flex justify-between items-center">
+            <div>
+                <h1 class="text-xs font-black text-sky-400">قسم العلوم - مدرسة البلاد القديم</h1>
+                <p class="text-[10px] text-slate-400 font-bold">إعداد: أ. صبري محمد حمد</p>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="history-modal-btn" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-black text-amber-400 hover:bg-slate-700">السجل والتقارير 📑</button>
+                <button id="theme-btn" class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 text-xs flex items-center justify-center">🌙</button>
+                <button id="close-panel-btn" class="w-7 h-7 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-black flex items-center justify-center">✕</button>
+            </div>
+        </header>
+
+        <!-- الجزء العلوي المضغوط والمدمج -->
+        <div class="p-2.5 flex flex-col gap-2 border-b border-slate-700/50 bg-slate-800/20">
+            <!-- الصف والحصة مدمجان في سطر واحد -->
+            <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                    <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300"></select>
+                </div>
+                <div>
+                    <select id="period-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300">
+                        <option value="الحصة الأولى">الحصة الأولى</option>
+                        <option value="الحصة الثانية">الحصة الثانية</option>
+                        <option value="الحصة الثالثة">الحصة الثالثة</option>
+                        <option value="الحصة الرابعة">الحصة الرابعة</option>
+                        <option value="الحصة الخامسة">الحصة الخامسة</option>
+                        <option value="الحصة السادسة">الحصة السادسة</option>
+                        <option value="الحصة السابعة">الحصة السابعة</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- زر سحب مدمج ومصغر لا يشغل حيزاً كبيراً -->
+            <div class="flex items-center gap-2">
+                <button id="spin-main-btn" class="flex-grow py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow active:scale-95 transition">
+                    <div id="mini-box" class="mini-rotator"></div>
+                    <span>⚡ سحب عشوائي</span>
+                </button>
+            </div>
+
+            <!-- مستطيل النتيجة بخط عريض وواضح -->
+            <div class="student-result-card">
+                <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
+            </div>
+
+            <!-- التقييم السريع -->
+            <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
+                <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
+                <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
+                <button data-val="3" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐⭐ 3</button>
+                <button data-val="0" class="score-btn py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-red-400 font-bold text-[10px]">بدون (0)</button>
+            </div>
+        </div>
+
+        <!-- قائمة الطلاب المتجاوبة بخط عريض وواضح -->
+        <div class="flex-grow overflow-hidden flex flex-col p-2.5">
+            <div class="flex justify-between items-center mb-1 text-xs text-slate-400 font-bold">
+                <span>الطلاب (<span id="total-count" class="text-amber-400">0</span>)</span>
+                <span class="text-[10px] text-slate-400">(نقرة: +⭐ | يمين: -⭐)</span>
+            </div>
+            <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
+        </div>
+
+        <!-- شريط العمليات السفلي -->
+        <footer class="p-2 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
+            <div class="grid grid-cols-2 gap-1.5 text-xs font-black">
+                <button id="save-cloud-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow">
+                    ☁️ حفظ في الشيت
+                </button>
+                <button id="print-current-btn" class="py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center gap-1 shadow">
+                    🖨️ طباعة الحصة
+                </button>
+            </div>
+            <button id="reset-session-btn" class="py-0.5 text-[10px] font-bold text-slate-400 hover:text-red-400 transition text-center">
+                تصفير نجوم الحصة الحالية
+            </button>
+        </footer>
+    </aside>
+
+    <!-- نافذة السجل والتقارير المجمعة والتعديل السحابي -->
+    <div id="history-modal" class="fixed inset-0 bg-black/85 z-[10005] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-xl p-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div class="flex items-center gap-2">
+                    <button id="tab-sessions-btn" class="px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950">📋 الحصص السابقة</button>
+                    <button id="tab-summary-btn" class="px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white">📊 التجميع والإحصاء</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="cloud-sync-btn" class="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[11px] font-bold" title="جلب ومزامنة البيانات من Google Sheets">🔄 تحديث من الشيت</button>
+                    <button id="close-history-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+                </div>
+            </div>
+
+            <!-- تبويب 1: الحصص السابقة -->
+            <div id="tab-sessions-content" class="flex-grow overflow-y-auto space-y-2 pr-1 text-xs">
+                <div id="history-sessions-list" class="space-y-2"></div>
+            </div>
+
+            <!-- تبويب 2: التجميع والإحصاء الأسبوعي والشهري -->
+            <div id="tab-summary-content" class="hidden flex-grow overflow-y-auto space-y-3 pr-1 text-xs">
+                <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 font-bold">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">الصف:</label>
+                        <select id="summary-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">النطاق الزمني:</label>
+                        <select id="summary-range-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-sky-400 font-bold outline-none">
+                            <option value="week">خلال الأسبوع الحالي</option>
+                            <option value="month">خلال الشهر الحالي</option>
+                            <option value="all">كل السجلات المتوفرة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center px-1">
+                    <span id="summary-count-info" class="text-xs font-bold text-slate-300">إجمالي المتميزين: 0</span>
+                    <div class="flex gap-2 font-bold">
+                        <button id="export-summary-excel-btn" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل التجميع</button>
+                        <button id="print-summary-btn" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">🖨️ طباعة التقرير</button>
+                    </div>
+                </div>
+
+                <div class="border border-slate-700 rounded-xl overflow-hidden font-bold">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-900 text-slate-300">
+                            <tr>
+                                <th class="p-2 text-center w-10">#</th>
+                                <th class="p-2">اسم الطالب</th>
+                                <th class="p-2 text-center">مجموع النجوم</th>
+                                <th class="p-2 text-center">مرات المشاركة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table-body" class="divide-y divide-slate-700/60 bg-slate-800/60 font-semibold"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل كشف حصة سابقة -->
+    <div id="edit-session-modal" class="fixed inset-0 bg-black/85 z-[10006] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div>
+                    <h3 class="font-bold text-amber-400 text-sm">تعديل كشف حصة سابقة</h3>
+                    <p id="edit-session-subtitle" class="text-[10px] text-slate-400 font-bold"></p>
+                </div>
+                <button id="close-edit-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+            </div>
+
+            <div class="flex gap-2 mb-2">
+                <select id="edit-add-student-select" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-bold outline-none"></select>
+                <button id="edit-add-student-btn" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg">+ إضافة طالب</button>
+            </div>
+
+            <div class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs" id="edit-records-list"></div>
+
+            <div class="border-t border-slate-700 pt-2.5 mt-2">
+                <button id="save-edited-session-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow">
+                    💾 حفظ التغييرات وتحديث الشيت محلياً وسحابياً
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- منطقة الطباعة الرسمية A4 -->
+    <div class="print-area" id="print-sheet">
+        <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+            <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 140px; object-fit: contain;">
+        </div>
+
+        <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #b45309; padding-bottom: 8px;">
+            <h2 id="print-main-title" style="font-size: 19px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
+            <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 8px; color: #333;">
+                <span id="p-class">الصف: </span>
+                <span id="p-day">اليوم: </span>
+                <span id="p-date">التاريخ: </span>
+                <span id="p-period">الحصة: </span>
+            </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #f1f5f9; -webkit-print-color-adjust: exact;">
+                    <th style="border: 1px solid #333; padding: 6px; width: 45px; text-align: center;">#</th>
+                    <th style="border: 1px solid #333; padding: 6px; text-align: right;">اسم الطالب</th>
+                    <th id="th-stars-col" style="border: 1px solid #333; padding: 6px; width: 120px; text-align: center;">نقاط المشاركة</th>
+                    <th id="th-extra-col" style="display: none; border: 1px solid #333; padding: 6px; width: 100px; text-align: center;">عدد الحصص</th>
+                </tr>
+            </thead>
+            <tbody id="print-rows"></tbody>
+        </table>
+
+        <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; font-weight: bold; padding: 0 20px;">
+            <div style="text-align: center;">
+                <div>معلم المادة</div>
+                <div style="margin-top: 10px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+            </div>
+            <div style="text-align: center;">
+                <div>مدير المدرسة</div>
+                <div style="margin-top: 10px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";
+
+        const studentDatabase = {
+            '2ع1': [
+                "أحمد على حبيب كاظم", "أحمد محمد ميرزا التيتون", "إدريس عبدالعزيز احمد عبدالنبي",
+                "آدم فاضل عباس حسين", "آدم نوح محمد المشخص", "السيد جعفر ضياء عدنان عبدالصمد",
+                "السيد حسين ميثم سعيد ماجد", "السيد صادق جعفر علوي العلوي", "السيد محمد حسين حمزه على",
+                "السيد هاشم رائد حميد على", "جاسم محمد جواد مکی", "حسن على محسن التيتون",
+                "حسين شريف اسماعيل اسماعيل", "حسين عبدالنبي ناصر دبی", "حسين عقيل عباس زبيل",
+                "حسين على عبدالحسين حسن", "حسين محمد حبيب غريب", "حيدر سعيد رضى النجاس",
+                "رضا موسى جعفر مرهون", "صادق جعفر عبد الوهاب البصري", "صلاح عقيل عباس موسى",
+                "عادل محمد عادل الترنج", "عباس عبدالله ابراهيم ال عميري", "على فيصل مختار محمد",
+                "على محمود على الصفار", "علي يوسف سلمان الصفار", "محمد باقر حسن محمد باقر نعمه",
+                "محمد حسن عيسى أحمد على", "محمد حسين جعفر مال الله", "منتظر حسن صالح الصيرفي"
+            ],
+            '2ع2': [
+                "احمد باسم ابراهيم الخنيزي", "السيدحيدر فيصل علوي ناصر", "إلياس بن شاكر بن على البراهيم",
+                "امير محمد عبد الامير رضی", "بدر طاهر عبدالرسول جديد", "حسن محمد حسن عيسى",
+                "حسن محمود منصور عبد على", "حسين حسن على الحمار", "حسين محمد جعفر حسن",
+                "حيدر احمد عبدالرسول بن الشيخ", "حيدر رائد معتوق حمود", "حيدر على ميرزا الصفار",
+                "راشد يوسف احمد يحيى", "سجاد حسين محسن عاشور", "سجاد زهير حسن عبد الرسول",
+                "عبدالكريم محمود عبدالكريم ابراهيم", "عبدالله محمد جعفر سهوان", "عبدالله محمد عبدالله الغيص",
+                "على حسين احمد عزيز", "على حسين ميرزا ال عبدالحي", "على حمد احمد على",
+                "على مصطفى على العلى", "فيصل احمد عباس زبيل", "محسن ابراهيم محسن عبد الرسول",
+                "محمد جلال عيسى نعمه", "محمد صادق احمد مشيمع", "محمد نادر ميرزا العرادي",
+                "مصطفى احمد محمد الاسكافي", "هيثم فاضل ابراهيم اسماعيل", "يوسف ابراهيم على الصفار"
+            ],
+            '2ع3': [
+                "السيد حسن ابراهيم محمد علوي", "السيد عباس حسين ناصر شرف", "السيد عباس فاضل على الموسوي",
+                "السيد على حسين نزار علوى", "السيدحيدر على مهدي يوسف", "ايمن جاسم احمد نصيف",
+                "حسن جعفر حسن حسن", "حسن على حسن عبد الوهاب", "حسين رضي على الصفار",
+                "حسين على عبدالحسين الصفار", "حيدر محمد موسى طاهر", "سلمان ابراهيم عبدالله عبدالله",
+                "سيدرضا السيد حسين عيسى", "طه جعفر حسن عيسى", "عبدالله منصور عبدالله شعبان",
+                "على حسن على مهدي", "على حسين عباس موسى", "على محمد احمد المغلق",
+                "على محمد على امان", "عماد ايمن احمد المديفع", "عيسى عبد الهادي عبد الجليل على",
+                "عيسى على عيسى النكاس", "كريم فائق عبد الكريم على", "مجتبى مرتضى ميرزا السطيح",
+                "محمد حسن عبدالله امان", "محمد خالد احمد علي", "محمد عباس عبدالله مرهون",
+                "محمد على ابراهيم محمد على ال مرهون", "مهدي حسين اكبر محسن", "يوسف زهير عبد الوهاب غزوان"
+            ],
+            '2ع4': [
+                "السيد حسين ماجد اسماعيل ناصر", "السيد على احمد عدنان البلادي", "السيد محسن ياسر عبدالله ناصر",
+                "السيد محمد على حمزه عبدالله", "جعفر صادق حسن الصفار", "جواد عبدالمجيد حسن راشد",
+                "حسن هاني ابراهيم حسن", "حسين محمد يعقوب الكليب", "خليل ابراهيم خليل الحايكي",
+                "سلمان حبيب سلمان الحواج", "سلمان حسين سلمان العالي", "عباس محمد حسن الشيخ على",
+                "عباس هاني عباس شاوش", "على حسن احمد الشيوخ", "على حسن على حبيب",
+                "على حسين عيسى الزامل", "على حسين عيسى خميس", "على عقيل جمعه جمعه",
+                "علي هادي حسين سلمان علي", "على هلال على هلال", "عمار ياسر ابراهيم ناصر",
+                "فاضل عباس جعفر المحسن", "قاسم حسن منصور القيدوم", "محمد عبدالله احمد البقالي",
+                "محمد على شاكر عبدالله خميس", "محمد هشام ايوب سوار", "محمد يونس خليل محمد",
+                "محمود ياسر محمد على", "مصطفى محمود عبدالله السابوري", "مهدي احمد عبد الرسول احمد على",
+                "مهدي عبد الحسين ميرزا على", "مهدي محمد مهدي عبدالله"
+            ]
+        };
+
+        let currentClass = '2ع1';
+        let studentPool = [];
+        let classStars = {};
+        let activeStudent = null;
+        let isSpinning = false;
+        let editingSessionId = null;
+
+        const audioSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.02, decay: 0.1, sustain: 0.01, release: 0.1 }
+        }).toDestination();
+
+        function getDayName(d = new Date()) {
+            return d.toLocaleDateString('ar-BH', { weekday: 'long' });
+        }
+
+        function getDateStr(d = new Date()) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function calculatePeriod() {
+            const now = new Date();
+            const mins = now.getHours() * 60 + now.getMinutes();
+            const timetable = [
+                [435, 480, 'الحصة الأولى'], [480, 525, 'الحصة الثانية'], [525, 570, 'الحصة الثالثة'],
+                [570, 600, 'الحصة الرابعة'], [600, 645, 'الحصة الرابعة'], [645, 690, 'الحصة الخامسة'],
+                [690, 705, 'الحصة السادسة'], [705, 750, 'الحصة السادسة'], [750, 795, 'الحصة السابعة']
+            ];
+            for (const [start, end, label] of timetable) {
+                if (mins >= start && mins < end) return label;
+            }
+            return 'الحصة الأولى';
+        }
+
+        const phonePanel = document.getElementById('phone-panel');
+        const togglePanelBtn = document.getElementById('toggle-panel-btn');
+        const closePanelBtn = document.getElementById('close-panel-btn');
+        const classSelect = document.getElementById('class-select');
+        const periodSelect = document.getElementById('period-select');
+        const spinMainBtn = document.getElementById('spin-main-btn');
+        const miniBox = document.getElementById('mini-box');
+        const targetStudentName = document.getElementById('target-student-name');
+        const quickStars = document.getElementById('quick-stars');
+        const studentsContainer = document.getElementById('students-container');
+        const totalCount = document.getElementById('total-count');
+        const themeBtn = document.getElementById('theme-btn');
+
+        const toggleWidget = () => phonePanel.classList.toggle('minimized');
+        togglePanelBtn.onclick = toggleWidget;
+        closePanelBtn.onclick = toggleWidget;
+
+        function loadClassData() {
+            const saved = localStorage.getItem(`widget_session_${currentClass}`);
+            classStars = saved ? JSON.parse(saved) : {};
+            const all = studentDatabase[currentClass] || [];
+            studentPool = all.filter(s => !classStars.hasOwnProperty(s));
+            if (studentPool.length === 0) studentPool = [...all];
+            renderStudentList();
+        }
+
+        function saveClassData() {
+            localStorage.setItem(`widget_session_${currentClass}`, JSON.stringify(classStars));
+        }
+
+        function renderStudentList() {
+            studentsContainer.innerHTML = '';
+            const all = studentDatabase[currentClass] || [];
+            totalCount.textContent = all.length;
+
+            all.forEach((name, i) => {
+                const stars = classStars[name] || 0;
+                const row = document.createElement('div');
+                row.className = `student-item p-2 rounded-xl flex items-center justify-between cursor-pointer ${stars > 0 ? 'has-stars' : ''}`;
+                row.innerHTML = `
+                    <span class="truncate font-black tracking-wide">${i + 1}. ${name}</span>
+                    <span class="text-amber-400 font-black text-sm">${stars > 0 ? '⭐ ' + stars : ''}</span>
+                `;
+
+                row.onclick = () => {
+                    classStars[name] = (classStars[name] || 0) + 1;
+                    saveClassData();
+                    renderStudentList();
+                };
+
+                row.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    if (classStars[name] > 0) {
+                        classStars[name]--;
+                        if (classStars[name] === 0) delete classStars[name];
+                        saveClassData();
+                        renderStudentList();
+                    }
+                };
+
+                studentsContainer.appendChild(row);
+            });
+        }
+
+        function launchConfetti() {
+            for (let i = 0; i < 35; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = `${Math.random() * 100}vw`;
+                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 55%)`;
+                piece.style.top = `-10px`;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 2000);
+            }
+        }
+
+        async function executeQuickSpin() {
+            if (isSpinning) return;
+
+            const list = studentDatabase[currentClass] || [];
+            if (studentPool.length === 0) studentPool = [...list];
+
+            try { await Tone.start(); } catch(e) {}
+
+            isSpinning = true;
+            spinMainBtn.disabled = true;
+            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            miniBox.style.animationPlayState = 'running';
+            targetStudentName.textContent = 'جاري السحب...';
+
+            const randIndex = Math.floor(Math.random() * studentPool.length);
+            const winner = studentPool[randIndex];
+
+            setTimeout(() => {
+                miniBox.style.animationPlayState = 'paused';
+                activeStudent = winner;
+                targetStudentName.textContent = winner;
+
+                studentPool.splice(randIndex, 1);
+                audioSynth.triggerAttackRelease("E5", "8n");
+                launchConfetti();
+
+                quickStars.classList.remove('opacity-40', 'pointer-events-none');
+                isSpinning = false;
+                spinMainBtn.disabled = false;
+            }, 1000);
+        }
+
+        document.querySelectorAll('.score-btn').forEach(b => {
+            b.onclick = () => {
+                if (!activeStudent) return;
+                const val = parseInt(b.dataset.val);
+                if (val > 0) {
+                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;
+                } else {
+                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;
+                }
+                saveClassData();
+                renderStudentList();
+            };
+        });
+
+        function getArchiveHistory() {
+            return JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
+        }
+
+        function saveArchiveHistory(history) {
+            localStorage.setItem('sessions_archive_history', JSON.stringify(history));
+        }
+
+        function archiveSessionLocally(records) {
+            let history = getArchiveHistory();
+            history.unshift({
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                day: getDayName(),
+                date: getDateStr(),
+                className: currentClass,
+                period: periodSelect.value,
+                records: records
+            });
+            saveArchiveHistory(history);
+        }
+
+        // إرسال الحصة للشيت وحفظها محلياً
+        document.getElementById('save-cloud-btn').onclick = async () => {
+            const all = studentDatabase[currentClass] || [];
+            const participants = all
+                .map(name => ({ name, stars: classStars[name] || 0 }))
+                .filter(p => p.stars > 0);
+
+            if (participants.length === 0) {
+                alert('لا توجد نجوم مشاركة مسجلة لحفظها.');
+                return;
+            }
+
+            const day = getDayName();
+            const date = getDateStr();
+            const period = periodSelect.value;
+
+            const payload = {
+                action: "append",
+                records: participants.map(p => ({
+                    day: day,
+                    date: date,
+                    className: currentClass,
+                    period: period,
+                    studentName: p.name,
+                    stars: p.stars
+                }))
+            };
+
+            archiveSessionLocally(participants);
+
+            const btn = document.getElementById('save-cloud-btn');
+            btn.innerHTML = '⏳ جاري الحفظ...';
+            btn.disabled = true;
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                alert('تم إرسال النتائج وحفظها بنجاح في Google Sheets!');
+            } catch(e) {
+                alert('تم حفظ الكشف محلياً وسيرفع للشيت لاحقاً.');
+            } finally {
+                btn.innerHTML = '☁️ حفظ في الشيت';
+                btn.disabled = false;
+            }
+        };
+
+        // استدعاء البيانات ومزامنتها من Google Sheets
+        async function syncFromGoogleSheets() {
+            const syncBtn = document.getElementById('cloud-sync-btn');
+            syncBtn.innerHTML = '⏳ جاري المزامنة...';
+            syncBtn.disabled = true;
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const cloudRows = await response.json();
+
+                if (Array.isArray(cloudRows) && cloudRows.length > 0) {
+                    // تجميع الصفوف السحابية إلى كشوف حصص
+                    const sessionMap = {};
+                    cloudRows.forEach(row => {
+                        const key = `${row.className}_${row.period}_${row.date}`;
+                        if (!sessionMap[key]) {
+                            sessionMap[key] = {
+                                id: Date.now() + Math.random(),
+                                day: row.day,
+                                date: row.date,
+                                className: row.className,
+                                period: row.period,
+                                records: []
+                            };
+                        }
+                        sessionMap[key].records.push({ name: row.studentName, stars: row.stars });
+                    });
+
+                    const reconstructedHistory = Object.values(sessionMap).reverse();
+                    saveArchiveHistory(reconstructedHistory);
+                    renderSessionsList();
+                    alert(`تمت المزامنة بنجاح! تم استدعاء ${reconstructedHistory.length} حصة من Google Sheets.`);
+                } else {
+                    alert('لم يتم العثور على بيانات مسجلة بالشيت.');
+                }
+            } catch(err) {
+                alert('تعذر استدعاء البيانات من الشيت، يرجى التأكد من نشر Apps Script وتصريح الوصول.');
+            } finally {
+                syncBtn.innerHTML = '🔄 تحديث من الشيت';
+                syncBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('cloud-sync-btn').onclick = syncFromGoogleSheets;
+
+        function exportToExcel(filename, data, sheetName = "المشاركات") {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            XLSX.writeFile(wb, `${filename}.xlsx`);
+        }
+
+        function exportSessionExcel(session) {
+            const safeDate = session.date.replace(/[\/\\]/g, '-');
+            const fileName = `مشاركات_علوم_${session.className}_${session.period}_${session.day}_${safeDate}`;
+            const rows = session.records.map((r, i) => ({
+                "م": i + 1,
+                "اسم الطالب": r.name,
+                "النجوم": r.stars,
+                "الصف": session.className,
+                "الحصة": session.period,
+                "اليوم": session.day,
+                "التاريخ": session.date
+            }));
+            exportToExcel(fileName, rows);
+        }
+
+        // الطباعة وتسمية ملف PDF تلقائياً
+        function triggerOfficialPrint(cls, day, date, period, records, isSummary = false) {
+            document.getElementById('p-class').textContent = `الصف: ${cls}`;
+            document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
+            document.getElementById('p-date').textContent = isSummary ? `تاريخ التقرير: ${date}` : `التاريخ: ${date}`;
+            document.getElementById('p-period').textContent = isSummary ? `النوع: تجميعي` : `الحصة: ${period}`;
+
+            document.getElementById('print-main-title').textContent = isSummary 
+                ? `تقرير التميز والمشاركات التجميعي - قسم العلوم` 
+                : `سجل مشاركات وتميز الطلاب في مادة العلوم`;
+
+            const thExtra = document.getElementById('th-extra-col');
+            const thStars = document.getElementById('th-stars-col');
+            thStars.textContent = isSummary ? 'مجموع النجوم' : 'نقاط المشاركة';
+            thExtra.style.display = isSummary ? 'table-cell' : 'none';
+
+            const tbody = document.getElementById('print-rows');
+            tbody.innerHTML = '';
+
+            records.sort((a, b) => b.stars - a.stars);
+            records.forEach((r, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold;">${r.name}</td>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
+                        ${isSummary ? `<td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
+                    </tr>
+                `;
+            });
+
+            const originalTitle = document.title;
+            const cleanDate = date.replace(/[\/\\]/g, '-');
+            
+            if (isSummary) {
+                document.title = `تجميع_مشاركات_${cls}_${day}_${cleanDate}`;
+            } else {
+                document.title = `مشاركات_${cls}_${period}_${day}_${cleanDate}`;
+            }
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                }, 1000);
+            }, 100);
+        }
+
+        document.getElementById('print-current-btn').onclick = () => {
+            const all = studentDatabase[currentClass] || [];
+            const participants = all
+                .map(name => ({ name, stars: classStars[name] || 0 }))
+                .filter(p => p.stars > 0);
+
+            if (participants.length === 0) {
+                alert('لا توجد نجوم مشاركة مسجلة لطباعتها.');
+                return;
+            }
+
+            triggerOfficialPrint(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
+        };
+
+        document.getElementById('reset-session-btn').onclick = () => {
+            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية؟`)) {
+                classStars = {};
+                localStorage.removeItem(`widget_session_${currentClass}`);
+                loadClassData();
+                targetStudentName.textContent = 'تم التصفير';
+                quickStars.classList.add('opacity-40', 'pointer-events-none');
+            }
+        };
+
+        const historyModal = document.getElementById('history-modal');
+        const historyList = document.getElementById('history-sessions-list');
+        const tabSessionsBtn = document.getElementById('tab-sessions-btn');
+        const tabSummaryBtn = document.getElementById('tab-summary-btn');
+        const tabSessionsContent = document.getElementById('tab-sessions-content');
+        const tabSummaryContent = document.getElementById('tab-summary-content');
+        const summaryClassSelect = document.getElementById('summary-class-select');
+        const summaryRangeSelect = document.getElementById('summary-range-select');
+        const summaryTableBody = document.getElementById('summary-table-body');
+        const summaryCountInfo = document.getElementById('summary-count-info');
+
+        tabSessionsBtn.onclick = () => {
+            tabSessionsBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";
+            tabSummaryBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white";
+            tabSessionsContent.classList.remove('hidden');
+            tabSummaryContent.classList.add('hidden');
+            renderSessionsList();
+        };
+
+        tabSummaryBtn.onclick = () => {
+            tabSummaryBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";
+            tabSessionsBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white";
+            tabSummaryContent.classList.remove('hidden');
+            tabSessionsContent.classList.add('hidden');
+            renderSummaryReport();
+        };
+
+        function renderSessionsList() {
+            const history = getArchiveHistory();
+            historyList.innerHTML = '';
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد حصص مسجلة، اضغط على (تحديث من الشيت) للمزامنة.</p>';
+                return;
+            }
+
+            history.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex flex-col gap-2 font-bold';
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-black text-sky-400">${session.className} - ${session.period}</div>
+                            <div class="text-[11px] text-slate-300">${session.day} (${session.date}) | ${session.records.length} طالب</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 font-bold">
+                            <button class="edit-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs">✏️ تعديل</button>
+                            <button class="excel-btn px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل</button>
+                            <button class="reprint-btn px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">🖨️ طباعة</button>
+                        </div>
+                    </div>
+                `;
+
+                item.querySelector('.edit-btn').onclick = () => openEditSessionModal(session.id);
+                item.querySelector('.excel-btn').onclick = () => exportSessionExcel(session);
+                item.querySelector('.reprint-btn').onclick = () => {
+                    triggerOfficialPrint(session.className, session.day, session.date, session.period, session.records);
+                };
+                historyList.appendChild(item);
+            });
+        }
+
+        document.getElementById('history-modal-btn').onclick = () => {
+            renderSessionsList();
+            historyModal.classList.remove('hidden');
+            historyModal.classList.add('flex');
+        };
+
+        document.getElementById('close-history-modal').onclick = () => {
+            historyModal.classList.add('hidden');
+            historyModal.classList.remove('flex');
+        };
+
+        // تعديل كشف الحصة وتحديثه سحابياً
+        const editModal = document.getElementById('edit-session-modal');
+        const editRecordsList = document.getElementById('edit-records-list');
+        const editAddSelect = document.getElementById('edit-add-student-select');
+        let sessionBeingEdited = null;
+
+        function openEditSessionModal(sessionId) {
+            const history = getArchiveHistory();
+            const session = history.find(s => s.id === sessionId);
+            if (!session) return;
+
+            sessionBeingEdited = JSON.parse(JSON.stringify(session));
+            editingSessionId = sessionId;
+
+            document.getElementById('edit-session-subtitle').textContent = 
+                `${sessionBeingEdited.className} - ${sessionBeingEdited.period} - ${sessionBeingEdited.day} (${sessionBeingEdited.date})`;
+
+            editAddSelect.innerHTML = '';
+            const allStudents = studentDatabase[sessionBeingEdited.className] || [];
+            allStudents.forEach(st => {
+                const opt = document.createElement('option');
+                opt.value = st;
+                opt.textContent = st;
+                editAddSelect.appendChild(opt);
+            });
+
+            renderEditRecords();
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+        }
+
+        function renderEditRecords() {
+            editRecordsList.innerHTML = '';
+            if (sessionBeingEdited.records.length === 0) {
+                editRecordsList.innerHTML = '<div class="text-center text-slate-400 py-3 font-bold">لا يوجد طلاب مسجلين في هذا الكشف.</div>';
+                return;
+            }
+
+            sessionBeingEdited.records.forEach((r, idx) => {
+                const row = document.createElement('div');
+                row.className = 'p-2 rounded-xl bg-slate-700/80 border border-slate-600 flex items-center justify-between text-xs font-bold';
+                row.innerHTML = `
+                    <span class="text-slate-100">${r.name}</span>
+                    <div class="flex items-center gap-1.5">
+                        <button class="minus-btn px-2 py-0.5 bg-red-600/80 hover:bg-red-500 rounded font-black text-white">-⭐</button>
+                        <span class="font-black text-amber-400 px-1 min-w-[32px] text-center">⭐ ${r.stars}</span>
+                        <button class="plus-btn px-2 py-0.5 bg-emerald-600/80 hover:bg-emerald-500 rounded font-black text-white">+⭐</button>
+                        <button class="del-btn text-red-400 hover:text-red-300 font-bold px-1.5" title="حذف من الكشف">🗑️</button>
+                    </div>
+                `;
+
+                row.querySelector('.minus-btn').onclick = () => {
+                    if (r.stars > 1) {
+                        r.stars--;
+                    } else {
+                        sessionBeingEdited.records.splice(idx, 1);
+                    }
+                    renderEditRecords();
+                };
+
+                row.querySelector('.plus-btn').onclick = () => {
+                    r.stars++;
+                    renderEditRecords();
+                };
+
+                row.querySelector('.del-btn').onclick = () => {
+                    sessionBeingEdited.records.splice(idx, 1);
+                    renderEditRecords();
+                };
+
+                editRecordsList.appendChild(row);
+            });
+        }
+
+        document.getElementById('edit-add-student-btn').onclick = () => {
+            const stName = editAddSelect.value;
+            if (!stName) return;
+
+            const existing = sessionBeingEdited.records.find(r => r.name === stName);
+            if (existing) {
+                existing.stars++;
+            } else {
+                sessionBeingEdited.records.push({ name: stName, stars: 1 });
+            }
+            renderEditRecords();
+        };
+
+        document.getElementById('save-edited-session-btn').onclick = async () => {
+            let history = getArchiveHistory();
+            const index = history.findIndex(s => s.id === editingSessionId);
+            if (index !== -1) {
+                history[index] = sessionBeingEdited;
+                saveArchiveHistory(history);
+
+                const btn = document.getElementById('save-edited-session-btn');
+                btn.innerHTML = '⏳ جاري تحديث الشيت السحابي...';
+                btn.disabled = true;
+
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: "updateSession",
+                            day: sessionBeingEdited.day,
+                            date: sessionBeingEdited.date,
+                            className: sessionBeingEdited.className,
+                            period: sessionBeingEdited.period,
+                            records: sessionBeingEdited.records
+                        })
+                    });
+                    alert('تم حفظ التعديلات وتحديث الشيت بنجاح!');
+                } catch(e) {
+                    alert('تم الحفظ محلياً.');
+                } finally {
+                    btn.innerHTML = '💾 حفظ التغييرات وتحديث الشيت محلياً وسحابياً';
+                    btn.disabled = false;
+                    editModal.classList.add('hidden');
+                    editModal.classList.remove('flex');
+                    renderSessionsList();
+                    if (!tabSummaryContent.classList.contains('hidden')) {
+                        renderSummaryReport();
+                    }
+                }
+            }
+        };
+
+        document.getElementById('close-edit-modal').onclick = () => {
+            editModal.classList.add('hidden');
+            editModal.classList.remove('flex');
+        };
+
+        // تجميع المشاركات
+        function getAggregatedData(targetClass, rangeType) {
+            const history = getArchiveHistory();
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            const dayOfWeek = now.getDay(); 
+            startOfWeek.setDate(now.getDate() - dayOfWeek);
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            const filteredSessions = history.filter(session => {
+                if (session.className !== targetClass) return false;
+                if (rangeType === 'all') return true;
+
+                const sessionDate = session.timestamp ? new Date(session.timestamp) : new Date(session.date);
+                if (rangeType === 'week') {
+                    return sessionDate >= startOfWeek;
+                } else if (rangeType === 'month') {
+                    return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
+                }
+                return true;
+            });
+
+            const studentMap = {};
+            filteredSessions.forEach(session => {
+                session.records.forEach(r => {
+                    if (!studentMap[r.name]) {
+                        studentMap[r.name] = { name: r.name, stars: 0, sessionsCount: 0 };
+                    }
+                    studentMap[r.name].stars += r.stars;
+                    studentMap[r.name].sessionsCount += 1;
+                });
+            });
+
+            return Object.values(studentMap).sort((a, b) => b.stars - a.stars);
+        }
+
+        function renderSummaryReport() {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+
+            summaryCountInfo.textContent = `إجمالي المتميزين: ${data.length} طالب`;
+            summaryTableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                summaryTableBody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 font-bold">لا توجد مشاركات مسجلة لهذا الصف خلال هذه الفترة.</td></tr>`;
+                return;
+            }
+
+            data.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 text-center font-black">${idx + 1}</td>
+                    <td class="p-2 font-black text-sky-300 text-sm">${st.name}</td>
+                    <td class="p-2 text-center font-black text-amber-400 text-sm">⭐ ${st.stars}</td>
+                    <td class="p-2 text-center font-bold text-slate-300">${st.sessionsCount}</td>
+                `;
+                summaryTableBody.appendChild(tr);
+            });
+        }
+
+        summaryClassSelect.onchange = renderSummaryReport;
+        summaryRangeSelect.onchange = renderSummaryReport;
+
+        document.getElementById('export-summary-excel-btn').onclick = () => {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+            if (data.length === 0) {
+                alert('لا توجد بيانات لتصديرها.');
+                return;
+            }
+
+            const rangeText = range === 'week' ? 'أسبوعي' : (range === 'month' ? 'شهري' : 'شامل');
+            const safeDate = getDateStr().replace(/[\/\\]/g, '-');
+            const fileName = `تجميع_مشاركات_${cls}_${rangeText}_${getDayName()}_${safeDate}`;
+
+            const rows = data.map((d, i) => ({
+                "م": i + 1,
+                "اسم الطالب": d.name,
+                "الصف": cls,
+                "مجموع النجوم": d.stars,
+                "عدد الحصص المشارك بها": d.sessionsCount,
+                "نوع التقرير": rangeText,
+                "تاريخ الاستخراج": getDateStr()
+            }));
+
+            exportToExcel(fileName, rows, `تجميع_${rangeText}`);
+        };
+
+        document.getElementById('print-summary-btn').onclick = () => {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+            if (data.length === 0) {
+                alert('لا توجد بيانات لطباعتها.');
+                return;
+            }
+            const rangeText = range === 'week' ? 'التقرير الأسبوعي' : (range === 'month' ? 'التقرير الشهري' : 'السجل الشامل');
+            triggerOfficialPrint(cls, rangeText, getDateStr(), 'تجميعي', data, true);
+        };
+
+        classSelect.onchange = (e) => {
+            currentClass = e.target.value;
+            summaryClassSelect.value = currentClass;
+            activeStudent = null;
+            targetStudentName.textContent = 'اضغط للبدء';
+            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            loadClassData();
+        };
+
+        themeBtn.onclick = () => {
+            document.body.classList.toggle('light-mode');
+            themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            Object.keys(studentDatabase).forEach(c => {
+                const opt1 = document.createElement('option');
+                opt1.value = c;
+                opt1.textContent = `الصف: ${c}`;
+                classSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = c;
+                opt2.textContent = `الصف: ${c}`;
+                summaryClassSelect.appendChild(opt2);
+            });
+
+            const currentAutoPeriod = calculatePeriod();
+            for (let i = 0; i < periodSelect.options.length; i++) {
+                if (periodSelect.options[i].value === currentAutoPeriod) {
+                    periodSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            loadClassData();
+            spinMainBtn.onclick = executeQuickSpin;
+        });
+    </script>
+</body>
+</html>
