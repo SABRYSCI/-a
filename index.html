@@ -467,9 +467,15 @@
                 const stars = classStars[name] || 0;
                 const row = document.createElement('div');
                 row.className = `student-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer ${stars > 0 ? 'has-stars' : ''}`;
+                
+                let starText = '';
+                if (stars > 0) {
+                    starText = '⭐ ' + stars;
+                }
+
                 row.innerHTML = `
                     <span class="truncate font-semibold">${i + 1}. ${name}</span>
-                    <span class="text-amber-400 font-bold">${stars > 0 ? '⭐ ' + stars : ''}</span>
+                    <span class="text-amber-400 font-bold">${starText}</span>
                 `;
 
                 row.onclick = () => {
