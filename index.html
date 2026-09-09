@@ -73,7 +73,6 @@
             pointer-events: none;
         }
 
-        /* كرت عرض الفائز بخط عريض وواضح */
         .student-result-card {
             background-color: var(--surface-bg);
             border: 2px solid #38bdf8;
@@ -114,7 +113,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* قائمة الطلاب: خط عريض وواضح */
         .student-item {
             background-color: var(--surface-bg);
             border: 1.5px solid var(--border-color);
@@ -153,7 +151,7 @@
                 margin: 0.6cm;
             }
             body { background: white !important; color: black !important; }
-            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal { display: none !important; }
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal { display: none !important; }
             .print-area { display: block !important; }
         }
         .print-area { display: none; }
@@ -256,6 +254,7 @@
                     <button id="tab-summary-btn" class="px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white">📊 التجميع والإحصاء</button>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="open-manual-modal-btn" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-[11px]">➕ إضافة حصة ورقية</button>
                     <button id="cloud-sync-btn" class="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[11px] font-bold" title="جلب ومزامنة البيانات من Google Sheets">🔄 تحديث من الشيت</button>
                     <button id="close-history-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
                 </div>
@@ -304,6 +303,57 @@
                         <tbody id="summary-table-body" class="divide-y divide-slate-700/60 bg-slate-800/60 font-semibold"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إدخال حصة سابقة يدوياً -->
+    <div id="manual-session-modal" class="fixed inset-0 bg-black/90 z-[10007] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[92vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div>
+                    <h3 class="font-bold text-amber-400 text-sm">➕ إدخال كشف حصة سابقة (ورقية)</h3>
+                    <p class="text-[10px] text-slate-400 font-bold">اختر الصف والتاريخ والحصة ثم أدخل نجوم الطلاب</p>
+                </div>
+                <button id="close-manual-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+            </div>
+
+            <!-- محددات الحصة الورقية -->
+            <div class="grid grid-cols-3 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 mb-2 font-bold text-xs">
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">الصف:</label>
+                    <select id="manual-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-amber-400 outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">التاريخ:</label>
+                    <input type="date" id="manual-date-input" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-sky-300 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">الحصة:</label>
+                    <select id="manual-period-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-sky-300 outline-none">
+                        <option value="الحصة الأولى">الحصة الأولى</option>
+                        <option value="الحصة الثانية">الحصة الثانية</option>
+                        <option value="الحصة الثالثة">الحصة الثالثة</option>
+                        <option value="الحصة الرابعة">الحصة الرابعة</option>
+                        <option value="الحصة الخامسة">الحصة الخامسة</option>
+                        <option value="الحصة السادسة">الحصة السادسة</option>
+                        <option value="الحصة السابعة">الحصة السابعة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-1 text-[11px] text-slate-400 font-bold px-1">
+                <span>اختر الطالب لإعطائه نجوماً:</span>
+                <span>(نقرة: +⭐ | يمين: -⭐)</span>
+            </div>
+
+            <!-- قائمة طلاب الصف لإدخال الدرجات -->
+            <div class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs" id="manual-students-list"></div>
+
+            <div class="border-t border-slate-700 pt-2.5 mt-2">
+                <button id="save-manual-session-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow">
+                    💾 حفظ الحصة وإرسالها للشيت
+                </button>
             </div>
         </div>
     </div>
@@ -435,6 +485,7 @@
         let activeStudent = null;
         let isSpinning = false;
         let editingSessionId = null;
+        let manualSessionStars = {};
 
         const audioSynth = new Tone.Synth({
             oscillator: { type: "sine" },
@@ -452,7 +503,6 @@
             return `${y}-${m}-${day}`;
         }
 
-        // تحويل أي أرقام مشرقية ٠-٩ أو شرطات مائلة إلى صيغة تاريخ قياسية
         function parseStandardDate(str) {
             if (!str) return new Date();
             let standard = String(str).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
@@ -614,15 +664,15 @@
             localStorage.setItem('sessions_archive_history', JSON.stringify(history));
         }
 
-        function archiveSessionLocally(records) {
+        function archiveSessionLocally(records, cls = currentClass, period = periodSelect.value, dStr = getDateStr(), day = getDayName()) {
             let history = getArchiveHistory();
             history.unshift({
-                id: Date.now(),
-                timestamp: new Date().toISOString(),
-                day: getDayName(),
-                date: getDateStr(),
-                className: currentClass,
-                period: periodSelect.value,
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                timestamp: new Date(dStr).toISOString(),
+                day: day,
+                date: dStr,
+                className: cls,
+                period: period,
                 records: records
             });
             saveArchiveHistory(history);
@@ -677,7 +727,7 @@
             }
         };
 
-        // استدعاء البيانات من Google Sheets ومعالجة صيغة التاريخ والتوجيه التلقائي
+        // استدعاء البيانات من Google Sheets
         async function syncFromGoogleSheets() {
             const syncBtn = document.getElementById('cloud-sync-btn');
             syncBtn.innerHTML = '⏳ جاري المزامنة...';
@@ -758,7 +808,6 @@
             exportToExcel(fileName, rows);
         }
 
-        // الطباعة وتسمية ملف PDF تلقائياً
         function triggerOfficialPrint(cls, day, date, period, records, isSummary = false) {
             document.getElementById('p-class').textContent = `الصف: ${cls}`;
             document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
@@ -861,7 +910,7 @@
             const history = getArchiveHistory();
             historyList.innerHTML = '';
             if (history.length === 0) {
-                historyList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد حصص مسجلة، اضغط على (تحديث من الشيت) للمزامنة.</p>';
+                historyList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد حصص مسجلة، اضغط على (تحديث من الشيت) أو (إضافة حصة ورقية).</p>';
                 return;
             }
 
@@ -902,10 +951,136 @@
             historyModal.classList.remove('flex');
         };
 
+        // نافذة إدخال حصة سابقة يدوياً (ورقية)
+        const manualModal = document.getElementById('manual-session-modal');
+        const manualClassSelect = document.getElementById('manual-class-select');
+        const manualDateInput = document.getElementById('manual-date-input');
+        const manualPeriodSelect = document.getElementById('manual-period-select');
+        const manualStudentsList = document.getElementById('manual-students-list');
+
+        document.getElementById('open-manual-modal-btn').onclick = () => {
+            manualSessionStars = {};
+            manualDateInput.value = getDateStr();
+            renderManualStudents();
+            manualModal.classList.remove('hidden');
+            manualModal.classList.add('flex');
+        };
+
+        document.getElementById('close-manual-modal').onclick = () => {
+            manualModal.classList.add('hidden');
+            manualModal.classList.remove('flex');
+        };
+
+        function renderManualStudents() {
+            manualStudentsList.innerHTML = '';
+            const cls = manualClassSelect.value;
+            const students = studentDatabase[cls] || [];
+
+            students.forEach((name, idx) => {
+                const stars = manualSessionStars[name] || 0;
+                const row = document.createElement('div');
+                row.className = `p-2 rounded-xl flex items-center justify-between text-xs font-bold border transition ${stars > 0 ? 'bg-amber-500/15 border-amber-500' : 'bg-slate-750 border-slate-600'}`;
+                row.innerHTML = `
+                    <span class="text-slate-100 font-bold">${idx + 1}. ${name}</span>
+                    <div class="flex items-center gap-1.5">
+                        <button class="m-minus px-2 py-0.5 bg-red-600 hover:bg-red-500 rounded text-white font-black">-⭐</button>
+                        <span class="m-val text-amber-400 font-black min-w-[32px] text-center">${stars > 0 ? '⭐ ' + stars : '0'}</span>
+                        <button class="m-plus px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-black">+⭐</button>
+                    </div>
+                `;
+
+                row.querySelector('.m-plus').onclick = () => {
+                    manualSessionStars[name] = (manualSessionStars[name] || 0) + 1;
+                    renderManualStudents();
+                };
+
+                row.querySelector('.m-minus').onclick = () => {
+                    if (manualSessionStars[name] > 1) {
+                        manualSessionStars[name]--;
+                    } else {
+                        delete manualSessionStars[name];
+                    }
+                    renderManualStudents();
+                };
+
+                manualStudentsList.appendChild(row);
+            });
+        }
+
+        manualClassSelect.onchange = () => {
+            manualSessionStars = {};
+            renderManualStudents();
+        };
+
+        document.getElementById('save-manual-session-btn').onclick = async () => {
+            const cls = manualClassSelect.value;
+            const dateVal = manualDateInput.value;
+            const period = manualPeriodSelect.value;
+
+            if (!dateVal) {
+                alert('يرجى تحديد تاريخ الحصة.');
+                return;
+            }
+
+            const participants = Object.keys(manualSessionStars).map(name => ({
+                name: name,
+                stars: manualSessionStars[name]
+            })).filter(p => p.stars > 0);
+
+            if (participants.length === 0) {
+                alert('يرجى رصد نجمة واحدة على الأقل لطالب.');
+                return;
+            }
+
+            const parsedDate = parseStandardDate(dateVal);
+            const dayName = getDayName(parsedDate);
+
+            // حفظ محلي
+            archiveSessionLocally(participants, cls, period, dateVal, dayName);
+
+            // إرسال سحابي للشيت
+            const btn = document.getElementById('save-manual-session-btn');
+            btn.innerHTML = '⏳ جاري الحفظ في الشيت...';
+            btn.disabled = true;
+
+            const payload = {
+                action: "append",
+                records: participants.map(p => ({
+                    day: dayName,
+                    date: dateVal,
+                    className: cls,
+                    period: period,
+                    studentName: p.name,
+                    stars: p.stars
+                }))
+            };
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                alert('تم حفظ الحصة الورقية وتخزينها بنجاح في Google Sheets!');
+            } catch(e) {
+                alert('تم حفظ الحصة محلياً بنجاح.');
+            } finally {
+                btn.innerHTML = '💾 حفظ الحصة وإرسالها للشيت';
+                btn.disabled = false;
+                manualModal.classList.add('hidden');
+                manualModal.classList.remove('flex');
+                renderSessionsList();
+                if (!tabSummaryContent.classList.contains('hidden')) {
+                    renderSummaryReport();
+                }
+            }
+        };
+
+        // تعديل كشف الحصة
         const editModal = document.getElementById('edit-session-modal');
         const editRecordsList = document.getElementById('edit-records-list');
         const editAddSelect = document.getElementById('edit-add-student-select');
-        let sessionBeingEdited = null;
 
         function openEditSessionModal(sessionId) {
             const history = getArchiveHistory();
@@ -1034,7 +1209,7 @@
             editModal.classList.remove('flex');
         };
 
-        // تجميع المشاركات الأسبوعية والشهرية
+        // تجميع المشاركات
         function getAggregatedData(targetClass, rangeType) {
             const history = getArchiveHistory();
             const now = new Date();
@@ -1140,6 +1315,7 @@
         classSelect.onchange = (e) => {
             currentClass = e.target.value;
             summaryClassSelect.value = currentClass;
+            manualClassSelect.value = currentClass;
             activeStudent = null;
             targetStudentName.textContent = 'اضغط للبدء';
             quickStars.classList.add('opacity-40', 'pointer-events-none');
@@ -1162,7 +1338,14 @@
                 opt2.value = c;
                 opt2.textContent = `الصف: ${c}`;
                 summaryClassSelect.appendChild(opt2);
+
+                const opt3 = document.createElement('option');
+                opt3.value = c;
+                opt3.textContent = `الصف: ${c}`;
+                manualClassSelect.appendChild(opt3);
             });
+
+            manualDateInput.value = getDateStr();
 
             const currentAutoPeriod = calculatePeriod();
             for (let i = 0; i < periodSelect.options.length; i++) {
