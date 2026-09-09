@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منظومة العلوم - النافذة الجانبية</title>
-    <!-- المكتبات الخارجية -->
+    <!-- استدعاء المكتبات الخارجية -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -73,6 +73,7 @@
             pointer-events: none;
         }
 
+        /* كرت عرض الفائز بخط عريض وواضح */
         .student-result-card {
             background-color: var(--surface-bg);
             border: 2px solid #38bdf8;
@@ -113,6 +114,7 @@
             to { transform: rotate(360deg); }
         }
 
+        /* قائمة الطلاب: خط عريض وواضح */
         .student-item {
             background-color: var(--surface-bg);
             border: 1.5px solid var(--border-color);
@@ -198,7 +200,7 @@
                 </div>
             </div>
 
-            <!-- زر سحب مصغر ومدمج -->
+            <!-- زر سحب مصغر -->
             <div class="flex items-center gap-2">
                 <button id="spin-main-btn" class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow active:scale-95 transition">
                     <div id="mini-box" class="mini-rotator"></div>
@@ -206,11 +208,12 @@
                 </button>
             </div>
 
-            <!-- بطاقة عرض الاسم بخط عريض -->
+            <!-- كرت الفائز -->
             <div class="student-result-card">
                 <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
             </div>
 
+            <!-- التقييم السريع -->
             <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
                 <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
                 <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
@@ -449,6 +452,24 @@
             return `${y}-${m}-${day}`;
         }
 
+        // تحويل أي أرقام مشرقية ٠-٩ أو شرطات مائلة إلى صيغة تاريخ قياسية
+        function parseStandardDate(str) {
+            if (!str) return new Date();
+            let standard = String(str).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+            standard = standard.replace(/[\/\\]/g, '-').trim();
+            
+            const parts = standard.split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                }
+                if (parts[2].length === 4) {
+                    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+            return new Date(standard);
+        }
+
         function calculatePeriod() {
             const now = new Date();
             const mins = now.getHours() * 60 + now.getMinutes();
@@ -656,36 +677,39 @@
             }
         };
 
-        // استدعاء البيانات من Google Sheets ومعالجة صيغة التاريخ
+        // استدعاء البيانات من Google Sheets ومعالجة صيغة التاريخ والتوجيه التلقائي
         async function syncFromGoogleSheets() {
             const syncBtn = document.getElementById('cloud-sync-btn');
             syncBtn.innerHTML = '⏳ جاري المزامنة...';
             syncBtn.disabled = true;
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
                 const cloudRows = await response.json();
 
                 if (Array.isArray(cloudRows) && cloudRows.length > 0) {
                     const sessionMap = {};
                     cloudRows.forEach(row => {
-                        let cleanDate = String(row.date)
-                            .replace(/[\/\\]/g, '-')
-                            .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+                        const parsedDate = parseStandardDate(row.date);
+                        const safeDateStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`;
                         
-                        const key = `${row.className}_${row.period}_${cleanDate}`;
+                        const key = `${String(row.className).trim()}_${String(row.period).trim()}_${safeDateStr}`;
                         if (!sessionMap[key]) {
                             sessionMap[key] = {
-                                id: Date.now() + Math.floor(Math.random() * 1000),
+                                id: Date.now() + Math.floor(Math.random() * 10000),
+                                timestamp: parsedDate.toISOString(),
                                 day: row.day,
-                                date: cleanDate,
-                                className: row.className,
-                                period: row.period,
+                                date: safeDateStr,
+                                className: String(row.className).trim(),
+                                period: String(row.period).trim(),
                                 records: []
                             };
                         }
                         sessionMap[key].records.push({ 
-                            name: row.studentName, 
+                            name: String(row.studentName).trim(), 
                             stars: Number(row.stars) || 0 
                         });
                     });
@@ -703,7 +727,7 @@
                     alert('تم الاتصال بالشيت بنجاح ولكن لم يتم العثور على سجلات مسجلة.');
                 }
             } catch(err) {
-                alert('تعذر استدعاء البيانات من الشيت. تأكد من إعداد النشر بشكل صحيح.');
+                alert('تعذر استدعاء البيانات من الشيت. تأكد من أن الرابط منتهي بـ /exec ومتاح للجميع (Anyone).');
             } finally {
                 syncBtn.innerHTML = '🔄 تحديث من الشيت';
                 syncBtn.disabled = false;
@@ -734,6 +758,7 @@
             exportToExcel(fileName, rows);
         }
 
+        // الطباعة وتسمية ملف PDF تلقائياً
         function triggerOfficialPrint(cls, day, date, period, records, isSummary = false) {
             document.getElementById('p-class').textContent = `الصف: ${cls}`;
             document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
@@ -1009,19 +1034,21 @@
             editModal.classList.remove('flex');
         };
 
+        // تجميع المشاركات الأسبوعية والشهرية
         function getAggregatedData(targetClass, rangeType) {
             const history = getArchiveHistory();
             const now = new Date();
+            
             const startOfWeek = new Date(now);
-            const dayOfWeek = now.getDay(); 
-            startOfWeek.setDate(now.getDate() - dayOfWeek);
+            startOfWeek.setDate(now.getDate() - now.getDay());
             startOfWeek.setHours(0, 0, 0, 0);
 
             const filteredSessions = history.filter(session => {
                 if (session.className !== targetClass) return false;
                 if (rangeType === 'all') return true;
 
-                const sessionDate = session.timestamp ? new Date(session.timestamp) : new Date(session.date);
+                const sessionDate = session.timestamp ? new Date(session.timestamp) : parseStandardDate(session.date);
+                
                 if (rangeType === 'week') {
                     return sessionDate >= startOfWeek;
                 } else if (rangeType === 'month') {
