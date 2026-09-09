@@ -155,7 +155,7 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .phone-widget, #toggle-panel-btn, #history-modal, .confetti-piece {
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, .confetti-piece {
                 display: none !important;
             }
             .print-area {
@@ -209,7 +209,6 @@
     </button>
 
     <aside id="phone-panel" class="phone-widget">
-        
         <header class="p-3 border-b border-slate-700/60 bg-slate-900/40 flex justify-between items-center">
             <div>
                 <h1 class="text-xs font-black text-sky-400">قسم العلوم - مدرسة البلاد القديم</h1>
@@ -282,6 +281,7 @@
         </footer>
     </aside>
 
+    <!-- نافذة السجل -->
     <div id="history-modal" class="fixed inset-0 bg-black/80 z-[10005] hidden items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-md p-4 flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
@@ -292,6 +292,29 @@
         </div>
     </div>
 
+    <!-- نافذة تعديل الحصة المؤرشفة -->
+    <div id="edit-session-modal" class="fixed inset-0 bg-black/80 z-[10006] hidden items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-md p-4 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
+                <h3 id="edit-modal-title" class="font-bold text-sky-400 text-sm">تعديل الحصة</h3>
+                <button id="close-edit-modal" class="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+            
+            <div class="flex gap-2 mb-3">
+                <select id="add-student-to-session-select" class="flex-grow bg-slate-700 border border-slate-600 rounded-xl px-2 py-1 text-xs font-bold outline-none"></select>
+                <button id="add-student-to-session-btn" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 rounded-xl font-bold text-xs">+ إضافة</button>
+            </div>
+
+            <div id="edit-students-list" class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs mb-3"></div>
+
+            <div class="flex justify-end gap-2 border-t border-slate-700 pt-3">
+                <button id="cancel-edit-btn" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs font-bold">إلغاء</button>
+                <button id="save-edited-session-btn" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- تقرير الطباعة الرسمي A4 -->
     <div class="print-area" id="print-sheet">
         <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" class="header-banner">
 
@@ -400,6 +423,8 @@
         let classStars = {};
         let activeStudent = null;
         let isSpinning = false;
+        let editingSessionIndex = null;
+        let tempEditingRecords = [];
 
         const audioSynth = new Tone.Synth({
             oscillator: { type: "sine" },
@@ -468,10 +493,7 @@
                 const row = document.createElement('div');
                 row.className = `student-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer ${stars > 0 ? 'has-stars' : ''}`;
                 
-                let starText = '';
-                if (stars > 0) {
-                    starText = '⭐ ' + stars;
-                }
+                let starText = stars > 0 ? '⭐ ' + stars : '';
 
                 row.innerHTML = `
                     <span class="truncate font-semibold">${i + 1}. ${name}</span>
@@ -667,33 +689,157 @@
             }
         };
 
+        // إدارة السجل المحفوظ والتعديل
         const historyModal = document.getElementById('history-modal');
         const historyList = document.getElementById('history-sessions-list');
+        const editSessionModal = document.getElementById('edit-session-modal');
+        const editStudentsList = document.getElementById('edit-students-list');
+        const addStudentSelect = document.getElementById('add-student-to-session-select');
 
-        document.getElementById('history-modal-btn').onclick = () => {
+        function renderHistoryList() {
             const history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
             historyList.innerHTML = '';
             if (history.length === 0) {
                 historyList.innerHTML = '<p class="text-center text-slate-400 py-4">لا توجد حصص سابقة محفوظة بالسجل.</p>';
-            } else {
-                history.forEach(session => {
-                    const item = document.createElement('div');
-                    item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex justify-between items-center';
-                    item.innerHTML = `
-                        <div>
-                            <div class="font-bold text-sky-400">${session.className} - ${session.period}</div>
-                            <div class="text-[10px] text-slate-300">${session.day} (${session.date}) | ${session.records.length} طالب</div>
-                        </div>
+                return;
+            }
+
+            history.forEach((session, idx) => {
+                const item = document.createElement('div');
+                item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex justify-between items-center';
+                item.innerHTML = `
+                    <div>
+                        <div class="font-bold text-sky-400">${session.className} - ${session.period}</div>
+                        <div class="text-[10px] text-slate-300">${session.day} (${session.date}) | ${session.records.length} طالب</div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button class="edit-btn px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-xs">
+                            ✏️ تعديل
+                        </button>
                         <button class="reprint-btn px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs">
                             🖨️ طباعة
                         </button>
-                    `;
-                    item.querySelector('.reprint-btn').onclick = () => {
-                        triggerOfficialPrint(session.className, session.day, session.date, session.period, session.records);
-                    };
-                    historyList.appendChild(item);
-                });
+                    </div>
+                `;
+
+                item.querySelector('.reprint-btn').onclick = () => {
+                    triggerOfficialPrint(session.className, session.day, session.date, session.period, session.records);
+                };
+
+                item.querySelector('.edit-btn').onclick = () => {
+                    openEditSessionModal(idx);
+                };
+
+                historyList.appendChild(item);
+            });
+        }
+
+        function openEditSessionModal(index) {
+            const history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
+            const session = history[index];
+            if (!session) return;
+
+            editingSessionIndex = index;
+            tempEditingRecords = JSON.parse(JSON.stringify(session.records || []));
+
+            document.getElementById('edit-modal-title').textContent = `تعديل حصة: ${session.className} - ${session.period}`;
+
+            // تجهيز قائمة الطلاب لإضافتهم إذا لم يكونوا مسجلين
+            const classStudents = studentDatabase[session.className] || [];
+            addStudentSelect.innerHTML = '';
+            classStudents.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                addStudentSelect.appendChild(opt);
+            });
+
+            renderEditRecords();
+            editSessionModal.classList.remove('hidden');
+            editSessionModal.classList.add('flex');
+        }
+
+        function renderEditRecords() {
+            editStudentsList.innerHTML = '';
+            if (tempEditingRecords.length === 0) {
+                editStudentsList.innerHTML = '<p class="text-center text-slate-400 py-3">لا يوجد طلاب في هذه الحصة حالياً.</p>';
+                return;
             }
+
+            tempEditingRecords.forEach((item, rIdx) => {
+                const row = document.createElement('div');
+                row.className = 'p-2 rounded-lg bg-slate-700/80 border border-slate-600 flex justify-between items-center';
+                row.innerHTML = `
+                    <span class="font-bold text-slate-200">${item.name}</span>
+                    <div class="flex items-center gap-2">
+                        <button class="dec-btn w-6 h-6 rounded bg-slate-600 text-amber-400 font-bold">-</button>
+                        <span class="font-bold text-amber-400 w-6 text-center">⭐ ${item.stars}</span>
+                        <button class="inc-btn w-6 h-6 rounded bg-slate-600 text-amber-400 font-bold">+</button>
+                        <button class="del-btn text-red-400 hover:text-red-300 font-bold mr-1">✕</button>
+                    </div>
+                `;
+
+                row.querySelector('.inc-btn').onclick = () => {
+                    item.stars++;
+                    renderEditRecords();
+                };
+
+                row.querySelector('.dec-btn').onclick = () => {
+                    if (item.stars > 1) {
+                        item.stars--;
+                    } else {
+                        tempEditingRecords.splice(rIdx, 1);
+                    }
+                    renderEditRecords();
+                };
+
+                row.querySelector('.del-btn').onclick = () => {
+                    tempEditingRecords.splice(rIdx, 1);
+                    renderEditRecords();
+                };
+
+                editStudentsList.appendChild(row);
+            });
+        }
+
+        document.getElementById('add-student-to-session-btn').onclick = () => {
+            const studentName = addStudentSelect.value;
+            if (!studentName) return;
+            const existing = tempEditingRecords.find(r => r.name === studentName);
+            if (existing) {
+                existing.stars++;
+            } else {
+                tempEditingRecords.push({ name: studentName, stars: 1 });
+            }
+            renderEditRecords();
+        };
+
+        document.getElementById('save-edited-session-btn').onclick = () => {
+            if (editingSessionIndex === null) return;
+            let history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
+            if (!history[editingSessionIndex]) return;
+
+            history[editingSessionIndex].records = tempEditingRecords;
+            localStorage.setItem('sessions_archive_history', JSON.stringify(history));
+
+            editSessionModal.classList.add('hidden');
+            editSessionModal.classList.remove('flex');
+            renderHistoryList();
+            alert('تم حفظ تعديلات الحصة بنجاح!');
+        };
+
+        document.getElementById('close-edit-modal').onclick = () => {
+            editSessionModal.classList.add('hidden');
+            editSessionModal.classList.remove('flex');
+        };
+
+        document.getElementById('cancel-edit-btn').onclick = () => {
+            editSessionModal.classList.add('hidden');
+            editSessionModal.classList.remove('flex');
+        };
+
+        document.getElementById('history-modal-btn').onclick = () => {
+            renderHistoryList();
             historyModal.classList.remove('hidden');
             historyModal.classList.add('flex');
         };
