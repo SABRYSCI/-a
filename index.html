@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منظومة العلوم - النافذة الجانبية</title>
+    <!-- المكتبات الخارجية -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -72,7 +73,6 @@
             pointer-events: none;
         }
 
-        /* كرت عرض الفائز بخط عريض وواضح */
         .student-result-card {
             background-color: var(--surface-bg);
             border: 2px solid #38bdf8;
@@ -113,7 +113,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* عنصر قائمة الطلاب: خط عريض وواضح */
         .student-item {
             background-color: var(--surface-bg);
             border: 1.5px solid var(--border-color);
@@ -180,9 +179,8 @@
             </div>
         </header>
 
-        <!-- الجزء العلوي المضغوط والمدمج -->
+        <!-- الجزء العلوي المدمج -->
         <div class="p-2.5 flex flex-col gap-2 border-b border-slate-700/50 bg-slate-800/20">
-            <!-- الصف والحصة مدمجان في سطر واحد -->
             <div class="grid grid-cols-2 gap-1.5">
                 <div>
                     <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300"></select>
@@ -200,20 +198,19 @@
                 </div>
             </div>
 
-            <!-- زر سحب مدمج ومصغر لا يشغل حيزاً كبيراً -->
+            <!-- زر سحب مصغر ومدمج -->
             <div class="flex items-center gap-2">
-                <button id="spin-main-btn" class="flex-grow py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow active:scale-95 transition">
+                <button id="spin-main-btn" class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow active:scale-95 transition">
                     <div id="mini-box" class="mini-rotator"></div>
                     <span>⚡ سحب عشوائي</span>
                 </button>
             </div>
 
-            <!-- مستطيل النتيجة بخط عريض وواضح -->
+            <!-- بطاقة عرض الاسم بخط عريض -->
             <div class="student-result-card">
                 <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
             </div>
 
-            <!-- التقييم السريع -->
             <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
                 <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
                 <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
@@ -222,7 +219,7 @@
             </div>
         </div>
 
-        <!-- قائمة الطلاب المتجاوبة بخط عريض وواضح -->
+        <!-- قائمة الطلاب بخط عريض وواضح -->
         <div class="flex-grow overflow-hidden flex flex-col p-2.5">
             <div class="flex justify-between items-center mb-1 text-xs text-slate-400 font-bold">
                 <span>الطلاب (<span id="total-count" class="text-amber-400">0</span>)</span>
@@ -231,7 +228,7 @@
             <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
         </div>
 
-        <!-- شريط العمليات السفلي -->
+        <!-- شريط العمليات -->
         <footer class="p-2 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
             <div class="grid grid-cols-2 gap-1.5 text-xs font-black">
                 <button id="save-cloud-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow">
@@ -247,7 +244,7 @@
         </footer>
     </aside>
 
-    <!-- نافذة السجل والتقارير المجمعة والتعديل السحابي -->
+    <!-- نافذة السجل والتقارير المجمعة -->
     <div id="history-modal" class="fixed inset-0 bg-black/85 z-[10005] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-xl p-4 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
@@ -261,12 +258,12 @@
                 </div>
             </div>
 
-            <!-- تبويب 1: الحصص السابقة -->
+            <!-- تبويب الحصص السابقة -->
             <div id="tab-sessions-content" class="flex-grow overflow-y-auto space-y-2 pr-1 text-xs">
                 <div id="history-sessions-list" class="space-y-2"></div>
             </div>
 
-            <!-- تبويب 2: التجميع والإحصاء الأسبوعي والشهري -->
+            <!-- تبويب التجميع الأسبوعي والشهري -->
             <div id="tab-summary-content" class="hidden flex-grow overflow-y-auto space-y-3 pr-1 text-xs">
                 <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 font-bold">
                     <div>
@@ -334,7 +331,7 @@
         </div>
     </div>
 
-    <!-- منطقة الطباعة الرسمية A4 -->
+    <!-- مساحة الطباعة الرسمية A4 -->
     <div class="print-area" id="print-sheet">
         <div style="width: 100%; text-align: center; margin-bottom: 12px;">
             <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 140px; object-fit: contain;">
@@ -610,7 +607,6 @@
             saveArchiveHistory(history);
         }
 
-        // إرسال الحصة للشيت وحفظها محلياً
         document.getElementById('save-cloud-btn').onclick = async () => {
             const all = studentDatabase[currentClass] || [];
             const participants = all
@@ -660,7 +656,7 @@
             }
         };
 
-        // استدعاء البيانات ومزامنتها من Google Sheets
+        // استدعاء البيانات من Google Sheets ومعالجة صيغة التاريخ
         async function syncFromGoogleSheets() {
             const syncBtn = document.getElementById('cloud-sync-btn');
             syncBtn.innerHTML = '⏳ جاري المزامنة...';
@@ -671,32 +667,43 @@
                 const cloudRows = await response.json();
 
                 if (Array.isArray(cloudRows) && cloudRows.length > 0) {
-                    // تجميع الصفوف السحابية إلى كشوف حصص
                     const sessionMap = {};
                     cloudRows.forEach(row => {
-                        const key = `${row.className}_${row.period}_${row.date}`;
+                        let cleanDate = String(row.date)
+                            .replace(/[\/\\]/g, '-')
+                            .replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+                        
+                        const key = `${row.className}_${row.period}_${cleanDate}`;
                         if (!sessionMap[key]) {
                             sessionMap[key] = {
-                                id: Date.now() + Math.random(),
+                                id: Date.now() + Math.floor(Math.random() * 1000),
                                 day: row.day,
-                                date: row.date,
+                                date: cleanDate,
                                 className: row.className,
                                 period: row.period,
                                 records: []
                             };
                         }
-                        sessionMap[key].records.push({ name: row.studentName, stars: row.stars });
+                        sessionMap[key].records.push({ 
+                            name: row.studentName, 
+                            stars: Number(row.stars) || 0 
+                        });
                     });
 
                     const reconstructedHistory = Object.values(sessionMap).reverse();
                     saveArchiveHistory(reconstructedHistory);
                     renderSessionsList();
+                    
+                    if (typeof renderSummaryReport === 'function') {
+                        renderSummaryReport();
+                    }
+
                     alert(`تمت المزامنة بنجاح! تم استدعاء ${reconstructedHistory.length} حصة من Google Sheets.`);
                 } else {
-                    alert('لم يتم العثور على بيانات مسجلة بالشيت.');
+                    alert('تم الاتصال بالشيت بنجاح ولكن لم يتم العثور على سجلات مسجلة.');
                 }
             } catch(err) {
-                alert('تعذر استدعاء البيانات من الشيت، يرجى التأكد من نشر Apps Script وتصريح الوصول.');
+                alert('تعذر استدعاء البيانات من الشيت. تأكد من إعداد النشر بشكل صحيح.');
             } finally {
                 syncBtn.innerHTML = '🔄 تحديث من الشيت';
                 syncBtn.disabled = false;
@@ -727,7 +734,6 @@
             exportToExcel(fileName, rows);
         }
 
-        // الطباعة وتسمية ملف PDF تلقائياً
         function triggerOfficialPrint(cls, day, date, period, records, isSummary = false) {
             document.getElementById('p-class').textContent = `الصف: ${cls}`;
             document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
@@ -871,7 +877,6 @@
             historyModal.classList.remove('flex');
         };
 
-        // تعديل كشف الحصة وتحديثه سحابياً
         const editModal = document.getElementById('edit-session-modal');
         const editRecordsList = document.getElementById('edit-records-list');
         const editAddSelect = document.getElementById('edit-add-student-select');
@@ -1004,7 +1009,6 @@
             editModal.classList.remove('flex');
         };
 
-        // تجميع المشاركات
         function getAggregatedData(targetClass, rangeType) {
             const history = getArchiveHistory();
             const now = new Date();
