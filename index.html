@@ -181,7 +181,6 @@
     </button>
 
     <aside id="phone-panel" class="phone-widget">
-        <!-- الرأس -->
         <header class="p-2.5 border-b border-slate-700/60 bg-slate-900/40 flex justify-between items-center">
             <div>
                 <h1 class="text-xs font-black text-sky-400">قسم العلوم - مدرسة البلاد القديم</h1>
@@ -194,11 +193,16 @@
             </div>
         </header>
 
-        <!-- الجزء العلوي -->
         <div class="p-2.5 flex flex-col gap-2 border-b border-slate-700/50 bg-slate-800/20">
             <div class="grid grid-cols-2 gap-1.5">
                 <div>
-                    <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300"></select>
+                    <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300">
+                        <option value="6ب1">الصف: 6ب1</option>
+                        <option value="2ع1">الصف: 2ع1</option>
+                        <option value="2ع2">الصف: 2ع2</option>
+                        <option value="2ع3">الصف: 2ع3</option>
+                        <option value="2ع4">الصف: 2ع4</option>
+                    </select>
                 </div>
                 <div>
                     <select id="period-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300">
@@ -224,13 +228,11 @@
                 </div>
             </div>
 
-            <!-- كرت الفائز -->
             <div class="student-result-card flex items-center justify-center gap-2">
                 <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
                 <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
             </div>
 
-            <!-- التقييم السريع -->
             <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
                 <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
                 <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
@@ -239,7 +241,6 @@
             </div>
         </div>
 
-        <!-- قائمة الطلاب -->
         <div class="flex-grow overflow-hidden flex flex-col p-2.5">
             <div class="flex justify-between items-center mb-1 text-xs text-slate-400 font-bold">
                 <span>الطلاب (<span id="total-count" class="text-amber-400">0</span>)</span>
@@ -248,7 +249,6 @@
             <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
         </div>
 
-        <!-- شريط العمليات السفلي -->
         <footer class="p-2 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
             <div class="grid grid-cols-2 gap-1.5 text-xs font-black">
                 <button id="save-new-session-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow">
@@ -265,7 +265,6 @@
         </footer>
     </aside>
 
-    <!-- نافذة رصد مخالفة سلوكية -->
     <div id="behavior-modal" class="fixed inset-0 bg-black/85 z-[10008] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-sm p-4 flex flex-col gap-3 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -304,7 +303,6 @@
         </div>
     </div>
 
-    <!-- نافذة السجل والتقارير المجمعة -->
     <div id="history-modal" class="fixed inset-0 bg-black/85 z-[10005] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-xl p-4 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
@@ -327,7 +325,13 @@
                 <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 font-bold">
                     <div>
                         <label class="block text-[11px] text-slate-400 mb-1">الصف:</label>
-                        <select id="summary-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none"></select>
+                        <select id="summary-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none">
+                            <option value="6ب1">الصف: 6ب1</option>
+                            <option value="2ع1">الصف: 2ع1</option>
+                            <option value="2ع2">الصف: 2ع2</option>
+                            <option value="2ع3">الصف: 2ع3</option>
+                            <option value="2ع4">الصف: 2ع4</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-[11px] text-slate-400 mb-1">النطاق الزمني:</label>
@@ -364,7 +368,6 @@
         </div>
     </div>
 
-    <!-- نافذة إدخال حصة سابقة يدوياً -->
     <div id="manual-session-modal" class="fixed inset-0 bg-black/90 z-[10007] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[92vh]">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
@@ -378,7 +381,13 @@
             <div class="grid grid-cols-3 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 mb-2 font-bold text-xs">
                 <div>
                     <label class="block text-[10px] text-slate-400 mb-1">الصف:</label>
-                    <select id="manual-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-amber-400 outline-none"></select>
+                    <select id="manual-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-amber-400 outline-none">
+                        <option value="6ب1">الصف: 6ب1</option>
+                        <option value="2ع1">الصف: 2ع1</option>
+                        <option value="2ع2">الصف: 2ع2</option>
+                        <option value="2ع3">الصف: 2ع3</option>
+                        <option value="2ع4">الصف: 2ع4</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-[10px] text-slate-400 mb-1">التاريخ:</label>
@@ -413,7 +422,6 @@
         </div>
     </div>
 
-    <!-- نافذة تعديل حصة سابقة -->
     <div id="edit-session-modal" class="fixed inset-0 bg-black/85 z-[10006] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
@@ -439,7 +447,6 @@
         </div>
     </div>
 
-    <!-- حاوية مستند الـ PDF للمشاركات -->
     <div style="position: absolute; left: -9999px; top: -9999px;">
         <div id="print-sheet">
             <div style="width: 100%; text-align: center; margin-bottom: 12px;">
@@ -481,11 +488,10 @@
         </div>
     </div>
 
-    <!-- منطقة طباعة المخالفات السلوكية الفردية -->
     <div class="print-area" id="print-behavior-area"></div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";[cite: 1]
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";
 
         const studentDatabase = {
             '6ب1': [
@@ -510,7 +516,7 @@
                 "عادل محمد عادل الترنج", "عباس عبدالله ابراهيم ال عميري", "على فيصل مختار محمد",
                 "على محمود على الصفار", "علي يوسف سلمان الصفار", "محمد باقر حسن محمد باقر نعمه",
                 "محمد حسن عيسى أحمد على", "محمد حسين جعفر مال الله", "منتظر حسن صالح الصيرفي"
-            ],[cite: 1]
+            ],
             '2ع2': [
                 "احمد باسم ابراهيم الخنيزي", "السيدحيدر فيصل علوي ناصر", "إلياس بن شاكر بن على البراهيم",
                 "امير محمد عبد الامير رضی", "بدر طاهر عبدالرسول جديد", "حسن محمد حسن عيسى",
@@ -522,7 +528,7 @@
                 "على مصطفى على العلى", "فيصل احمد عباس زبيل", "محسن ابراهيم محسن عبد الرسول",
                 "محمد جلال عيسى نعمه", "محمد صادق احمد مشيمع", "محمد نادر ميرزا العرادي",
                 "مصطفى احمد محمد الاسكافي", "هيثم فاضل ابراهيم اسماعيل", "يوسف ابراهيم على الصفار"
-            ],[cite: 1]
+            ],
             '2ع3': [
                 "السيد حسن ابراهيم محمد علوي", "السيد عباس حسين ناصر شرف", "السيد عباس فاضل على الموسوي",
                 "السيد على حسين نزار علوى", "السيدحيدر على مهدي يوسف", "ايمن جاسم احمد نصيف",
@@ -534,7 +540,7 @@
                 "عيسى على عيسى النكاس", "كريم فائق عبد الكريم على", "مجتبى مرتضى ميرزا السطيح",
                 "محمد حسن عبدالله امان", "محمد خالد احمد علي", "محمد عباس عبدالله مرهون",
                 "محمد على ابراهيم محمد على ال مرهون", "مهدي حسين اكبر محسن", "يوسف زهير عبد الوهاب غزوان"
-            ],[cite: 1]
+            ],
             '2ع4': [
                 "السيد حسين ماجد اسماعيل ناصر", "السيد على احمد عدنان البلادي", "السيد محسن ياسر عبدالله ناصر",
                 "السيد محمد على حمزه عبدالله", "جعفر صادق حسن الصفار", "جواد عبدالمجيد حسن راشد",
@@ -547,7 +553,7 @@
                 "محمد على شاكر عبدالله خميس", "محمد هشام ايوب سوار", "محمد يونس خليل محمد",
                 "محمود ياسر محمد على", "مصطفى محمود عبدالله السابوري", "مهدي احمد عبد الرسول احمد على",
                 "مهدي عبد الحسين ميرزا على", "مهدي محمد مهدي عبدالله"
-            ][cite: 1]
+            ]
         };
 
         const defaultBehaviorReasons = [
@@ -559,12 +565,11 @@
             "مقاطعة المعلم أو زملاء الصف بدون استئذان"
         ];
 
-        // الصف الافتراضي الأول
-        let currentClass = Object.keys(studentDatabase)[0];
-        let studentPool = [];[cite: 1]
-        let classStars = {};[cite: 1]
-        let activeStudent = null;[cite: 1]
-        let isSpinning = false;[cite: 1]
+        let currentClass = '6ب1';
+        let studentPool = [];
+        let classStars = {};
+        let activeStudent = null;
+        let isSpinning = false;
         let editingSessionId = null;
         let manualSessionStars = {};
         let studentToDeduct = null;
@@ -572,10 +577,10 @@
         const audioSynth = new Tone.Synth({
             oscillator: { type: "sine" },
             envelope: { attack: 0.02, decay: 0.1, sustain: 0.01, release: 0.1 }
-        }).toDestination();[cite: 1]
+        }).toDestination();
 
         function getDayName(d = new Date()) {
-            return d.toLocaleDateString('ar-BH', { weekday: 'long' });[cite: 1]
+            return d.toLocaleDateString('ar-BH', { weekday: 'long' });
         }
 
         function getDateStr(d = new Date()) {
@@ -598,45 +603,45 @@
         }
 
         function calculatePeriod() {
-            const now = new Date();[cite: 1]
-            const mins = now.getHours() * 60 + now.getMinutes();[cite: 1]
+            const now = new Date();
+            const mins = now.getHours() * 60 + now.getMinutes();
             const timetable = [
                 [435, 480, 'الحصة الأولى'], [480, 525, 'الحصة الثانية'], [525, 570, 'الحصة الثالثة'],
                 [570, 600, 'الحصة الرابعة'], [600, 645, 'الحصة الرابعة'], [645, 690, 'الحصة الخامسة'],
                 [690, 705, 'الحصة السادسة'], [705, 750, 'الحصة السادسة'], [750, 795, 'الحصة السابعة']
-            ];[cite: 1]
+            ];
             for (const [start, end, label] of timetable) {
-                if (mins >= start && mins < end) return label;[cite: 1]
+                if (mins >= start && mins < end) return label;
             }
-            return 'الحصة الأولى';[cite: 1]
+            return 'الحصة الأولى';
         }
 
-        const phonePanel = document.getElementById('phone-panel');[cite: 1]
-        const togglePanelBtn = document.getElementById('toggle-panel-btn');[cite: 1]
-        const closePanelBtn = document.getElementById('close-panel-btn');[cite: 1]
-        const classSelect = document.getElementById('class-select');[cite: 1]
-        const periodSelect = document.getElementById('period-select');[cite: 1]
-        const spinMainBtn = document.getElementById('spin-main-btn');[cite: 1]
-        const miniBox = document.getElementById('mini-box');[cite: 1]
-        const targetStudentName = document.getElementById('target-student-name');[cite: 1]
+        const phonePanel = document.getElementById('phone-panel');
+        const togglePanelBtn = document.getElementById('toggle-panel-btn');
+        const closePanelBtn = document.getElementById('close-panel-btn');
+        const classSelect = document.getElementById('class-select');
+        const periodSelect = document.getElementById('period-select');
+        const spinMainBtn = document.getElementById('spin-main-btn');
+        const miniBox = document.getElementById('mini-box');
+        const targetStudentName = document.getElementById('target-student-name');
         const targetStudentStars = document.getElementById('target-student-stars');
-        const quickStars = document.getElementById('quick-stars');[cite: 1]
-        const studentsContainer = document.getElementById('students-container');[cite: 1]
-        const totalCount = document.getElementById('total-count');[cite: 1]
+        const quickStars = document.getElementById('quick-stars');
+        const studentsContainer = document.getElementById('students-container');
+        const totalCount = document.getElementById('total-count');
         const poolRemaining = document.getElementById('pool-remaining');
         const poolStatus = document.getElementById('pool-status');
-        const themeBtn = document.getElementById('theme-btn');[cite: 1]
+        const themeBtn = document.getElementById('theme-btn');
 
-        const toggleWidget = () => phonePanel.classList.toggle('minimized');[cite: 1]
-        togglePanelBtn.onclick = toggleWidget;[cite: 1]
-        closePanelBtn.onclick = toggleWidget;[cite: 1]
+        const toggleWidget = () => phonePanel.classList.toggle('minimized');
+        togglePanelBtn.onclick = toggleWidget;
+        closePanelBtn.onclick = toggleWidget;
 
         function loadClassData() {
             const savedStars = localStorage.getItem(`widget_session_${currentClass}`);
             classStars = savedStars ? JSON.parse(savedStars) : {};
 
             const savedPool = localStorage.getItem(`widget_pool_${currentClass}`);
-            const all = studentDatabase[currentClass] || [];[cite: 1]
+            const all = studentDatabase[currentClass] || [];
 
             if (savedPool) {
                 studentPool = JSON.parse(savedPool);
@@ -663,7 +668,7 @@
         }
 
         function updatePoolDisplay() {
-            const all = studentDatabase[currentClass] || [];[cite: 1]
+            const all = studentDatabase[currentClass] || [];
             poolRemaining.textContent = `${studentPool.length} من ${all.length}`;
             if (studentPool.length === all.length) {
                 poolStatus.textContent = "(دورة سحب جديدة)";
@@ -685,15 +690,15 @@
         }
 
         function renderStudentList() {
-            studentsContainer.innerHTML = '';[cite: 1]
-            const all = studentDatabase[currentClass] || [];[cite: 1]
-            totalCount.textContent = all.length;[cite: 1]
+            studentsContainer.innerHTML = '';
+            const all = studentDatabase[currentClass] || [];
+            totalCount.textContent = all.length;
 
             all.forEach((name, i) => {
-                const stars = classStars[name] || 0;[cite: 1]
+                const stars = classStars[name] || 0;
                 const isChosenInThisCycle = !studentPool.includes(name);
 
-                const row = document.createElement('div');[cite: 1]
+                const row = document.createElement('div');
                 row.className = `student-item p-2 rounded-xl flex items-center justify-between cursor-pointer ${stars > 0 ? 'has-stars' : ''} ${isChosenInThisCycle ? 'already-chosen' : ''}`;
                 row.innerHTML = `
                     <div class="flex items-center gap-1.5 truncate">
@@ -704,39 +709,39 @@
                 `;
 
                 row.onclick = () => {
-                    classStars[name] = (classStars[name] || 0) + 1;[cite: 1]
-                    saveClassData();[cite: 1]
-                    renderStudentList();[cite: 1]
+                    classStars[name] = (classStars[name] || 0) + 1;
+                    saveClassData();
+                    renderStudentList();
                     if (activeStudent === name) updateTargetCardStars();
                 };
 
                 row.oncontextmenu = (e) => {
-                    e.preventDefault();[cite: 1]
+                    e.preventDefault();
                     openBehaviorModal(name);
                 };
 
-                studentsContainer.appendChild(row);[cite: 1]
+                studentsContainer.appendChild(row);
             });
         }
 
         function launchConfetti() {
-            for (let i = 0; i < 35; i++) {[cite: 1]
-                const piece = document.createElement('div');[cite: 1]
-                piece.className = 'confetti-piece';[cite: 1]
-                piece.style.left = `${Math.random() * 100}vw`;[cite: 1]
-                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 55%)`;[cite: 1]
-                piece.style.top = `-10px`;[cite: 1]
-                document.body.appendChild(piece);[cite: 1]
-                setTimeout(() => piece.remove(), 2000);[cite: 1]
+            for (let i = 0; i < 35; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = `${Math.random() * 100}vw`;
+                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 55%)`;
+                piece.style.top = `-10px`;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 2000);
             }
         }
 
         async function executeQuickSpin() {
-            if (isSpinning) return;[cite: 1]
+            if (isSpinning) return;
 
-            const all = studentDatabase[currentClass] || [];[cite: 1]
+            const all = studentDatabase[currentClass] || [];
             if (studentPool.length === 0) {
-                studentPool = [...all];[cite: 1]
+                studentPool = [...all];
                 savePoolData();
                 updatePoolDisplay();
             }
@@ -751,12 +756,12 @@
                 return (classStars[student] || 0) === minStars;
             });
 
-            try { await Tone.start(); } catch(e) {}[cite: 1]
+            try { await Tone.start(); } catch(e) {}
 
-            isSpinning = true;[cite: 1]
-            spinMainBtn.disabled = true;[cite: 1]
-            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
-            miniBox.style.animationPlayState = 'running';[cite: 1]
+            isSpinning = true;
+            spinMainBtn.disabled = true;
+            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            miniBox.style.animationPlayState = 'running';
             targetStudentName.textContent = 'جاري السحب العادل...';
             targetStudentStars.classList.add('hidden');
 
@@ -764,9 +769,9 @@
             const winner = eligibleCandidates[randIndex];
 
             setTimeout(() => {
-                miniBox.style.animationPlayState = 'paused';[cite: 1]
-                activeStudent = winner;[cite: 1]
-                targetStudentName.textContent = winner;[cite: 1]
+                miniBox.style.animationPlayState = 'paused';
+                activeStudent = winner;
+                targetStudentName.textContent = winner;
                 updateTargetCardStars();
 
                 const poolIndex = studentPool.indexOf(winner);
@@ -778,26 +783,26 @@
                 updatePoolDisplay();
                 renderStudentList();
 
-                audioSynth.triggerAttackRelease("E5", "8n");[cite: 1]
-                launchConfetti();[cite: 1]
+                audioSynth.triggerAttackRelease("E5", "8n");
+                launchConfetti();
 
-                quickStars.classList.remove('opacity-40', 'pointer-events-none');[cite: 1]
-                isSpinning = false;[cite: 1]
-                spinMainBtn.disabled = false;[cite: 1]
-            }, 1000);[cite: 1]
+                quickStars.classList.remove('opacity-40', 'pointer-events-none');
+                isSpinning = false;
+                spinMainBtn.disabled = false;
+            }, 1000);
         }
 
         document.querySelectorAll('.score-btn').forEach(b => {
             b.onclick = () => {
-                if (!activeStudent) return;[cite: 1]
-                const val = parseInt(b.dataset.val);[cite: 1]
+                if (!activeStudent) return;
+                const val = parseInt(b.dataset.val);
                 if (val > 0) {
-                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;[cite: 1]
+                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;
                 } else {
-                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;[cite: 1]
+                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;
                 }
-                saveClassData();[cite: 1]
-                renderStudentList();[cite: 1]
+                saveClassData();
+                renderStudentList();
                 updateTargetCardStars();
             };
         });
@@ -825,10 +830,10 @@
         }
 
         document.getElementById('save-new-session-btn').onclick = async () => {
-            const all = studentDatabase[currentClass] || [];[cite: 1]
+            const all = studentDatabase[currentClass] || [];
             const participants = all
-                .map(name => ({ name, stars: classStars[name] || 0 }))[cite: 1]
-                .filter(p => p.stars > 0);[cite: 1]
+                .map(name => ({ name, stars: classStars[name] || 0 }))
+                .filter(p => p.stars > 0);
 
             if (participants.length === 0) {
                 if (confirm(`لا توجد نجوم مسجلة حالياً لصف (${currentClass}). هل تريد تصفير الحصة وبدء حصة جديدة؟`)) {
@@ -837,9 +842,9 @@
                 return;
             }
 
-            const day = getDayName();[cite: 1]
-            const date = getDateStr();[cite: 1]
-            const period = periodSelect.value;[cite: 1]
+            const day = getDayName();
+            const date = getDateStr();
+            const period = periodSelect.value;
 
             archiveSessionLocally(participants, currentClass, period, date, day);
 
@@ -882,15 +887,15 @@
             studentPool = [...(studentDatabase[currentClass] || [])];
             savePoolData();
 
-            activeStudent = null;[cite: 1]
-            targetStudentName.textContent = 'اضغط للبدء';[cite: 1]
+            activeStudent = null;
+            targetStudentName.textContent = 'اضغط للبدء';
             targetStudentStars.classList.add('hidden');
-            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
+            quickStars.classList.add('opacity-40', 'pointer-events-none');
             loadClassData();
         }
 
         document.getElementById('reset-session-btn').onclick = () => {
-            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية بدون حفظ؟`)) {[cite: 1]
+            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية بدون حفظ؟`)) {
                 resetCurrentSessionDirectly();
             }
         };
@@ -1205,21 +1210,21 @@
         }
 
         document.getElementById('print-current-btn').onclick = () => {
-            const all = studentDatabase[currentClass] || [];[cite: 1]
+            const all = studentDatabase[currentClass] || [];
             const participants = all
-                .map(name => ({ name, stars: classStars[name] || 0 }))[cite: 1]
-                .filter(p => p.stars > 0);[cite: 1]
+                .map(name => ({ name, stars: classStars[name] || 0 }))
+                .filter(p => p.stars > 0);
 
             if (participants.length === 0) {
-                alert('لا توجد نجوم مشاركة مسجلة لتحميلها.');[cite: 1]
-                return;[cite: 1]
+                alert('لا توجد نجوم مشاركة مسجلة لتحميلها.');
+                return;
             }
 
             triggerFastPdfDownload(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
         };
 
-        const historyModal = document.getElementById('history-modal');[cite: 1]
-        const historyList = document.getElementById('history-sessions-list');[cite: 1]
+        const historyModal = document.getElementById('history-modal');
+        const historyList = document.getElementById('history-sessions-list');
         const tabSessionsBtn = document.getElementById('tab-sessions-btn');
         const tabSummaryBtn = document.getElementById('tab-summary-btn');
         const tabSessionsContent = document.getElementById('tab-sessions-content');
@@ -1247,14 +1252,14 @@
 
         function renderSessionsList() {
             const history = getArchiveHistory();
-            historyList.innerHTML = '';[cite: 1]
+            historyList.innerHTML = '';
             if (history.length === 0) {
                 historyList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد حصص مسجلة، اضغط على (تحديث من الشيت) أو (إضافة حصة ورقية).</p>';
                 return;
             }
 
             history.forEach(session => {
-                const item = document.createElement('div');[cite: 1]
+                const item = document.createElement('div');
                 item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex flex-col gap-2 font-bold';
                 item.innerHTML = `
                     <div class="flex justify-between items-center">
@@ -1275,19 +1280,19 @@
                 item.querySelector('.reprint-btn').onclick = () => {
                     triggerFastPdfDownload(session.className, session.day, session.date, session.period, session.records);
                 };
-                historyList.appendChild(item);[cite: 1]
+                historyList.appendChild(item);
             });
         }
 
         document.getElementById('history-modal-btn').onclick = () => {
             renderSessionsList();
-            historyModal.classList.remove('hidden');[cite: 1]
-            historyModal.classList.add('flex');[cite: 1]
+            historyModal.classList.remove('hidden');
+            historyModal.classList.add('flex');
         };
 
         document.getElementById('close-history-modal').onclick = () => {
-            historyModal.classList.add('hidden');[cite: 1]
-            historyModal.classList.remove('flex');[cite: 1]
+            historyModal.classList.add('hidden');
+            historyModal.classList.remove('flex');
         };
 
         const manualModal = document.getElementById('manual-session-modal');
@@ -1312,7 +1317,7 @@
         function renderManualStudents() {
             manualStudentsList.innerHTML = '';
             const cls = manualClassSelect.value;
-            const students = studentDatabase[cls] || [];[cite: 1]
+            const students = studentDatabase[cls] || [];
 
             students.forEach((name, idx) => {
                 const stars = manualSessionStars[name] || 0;
@@ -1427,7 +1432,7 @@
                 `${sessionBeingEdited.className} - ${sessionBeingEdited.period} - ${sessionBeingEdited.day} (${sessionBeingEdited.date})`;
 
             editAddSelect.innerHTML = '';
-            const allStudents = studentDatabase[sessionBeingEdited.className] || [];[cite: 1]
+            const allStudents = studentDatabase[sessionBeingEdited.className] || [];
             allStudents.forEach(st => {
                 const opt = document.createElement('option');
                 opt.value = st;
@@ -1638,48 +1643,24 @@
         };
 
         classSelect.onchange = (e) => {
-            currentClass = e.target.value;[cite: 1]
+            currentClass = e.target.value;
             summaryClassSelect.value = currentClass;
             manualClassSelect.value = currentClass;
-            activeStudent = null;[cite: 1]
-            targetStudentName.textContent = 'اضغط للبدء';[cite: 1]
+            activeStudent = null;
+            targetStudentName.textContent = 'اضغط للبدء';
             targetStudentStars.classList.add('hidden');
-            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
-            loadClassData();[cite: 1]
+            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            loadClassData();
         };
 
         themeBtn.onclick = () => {
-            document.body.classList.toggle('light-mode');[cite: 1]
-            themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';[cite: 1]
+            document.body.classList.toggle('light-mode');
+            themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
         };
 
-        // تهيئة القوائم المنسدلة والبيانات تلقائياً
+        // تشغيل التهيئة وضمان ملء القوائم فوراً
         function initApp() {
-            const classKeys = Object.keys(studentDatabase);
-            classSelect.innerHTML = '';
-            summaryClassSelect.innerHTML = '';
-            manualClassSelect.innerHTML = '';
-
-            classKeys.forEach(c => {
-                const opt1 = document.createElement('option');
-                opt1.value = c;
-                opt1.textContent = `الصف: ${c}`;
-                classSelect.appendChild(opt1);
-
-                const opt2 = document.createElement('option');
-                opt2.value = c;
-                opt2.textContent = `الصف: ${c}`;
-                summaryClassSelect.appendChild(opt2);
-
-                const opt3 = document.createElement('option');
-                opt3.value = c;
-                opt3.textContent = `الصف: ${c}`;
-                manualClassSelect.appendChild(opt3);
-            });
-
-            // ضبط الصف الافتراضي الأول في القوائم
-            currentClass = classKeys[0];
-            classSelect.value = currentClass;
+            currentClass = classSelect.value || '6ب1';
             summaryClassSelect.value = currentClass;
             manualClassSelect.value = currentClass;
 
@@ -1698,6 +1679,10 @@
         }
 
         window.addEventListener('DOMContentLoaded', initApp);
+        // تشغيل مباشر احتياطي في حال تأخر حدث التحميل
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            initApp();
+        }
     </script>
 </body>
 </html>
