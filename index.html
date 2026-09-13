@@ -248,7 +248,7 @@
             <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
         </div>
 
-        <!-- شريط العمليات -->
+        <!-- شريط العمليات السفلي -->
         <footer class="p-2 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
             <div class="grid grid-cols-2 gap-1.5 text-xs font-black">
                 <button id="save-new-session-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow">
@@ -559,7 +559,8 @@
             "مقاطعة المعلم أو زملاء الصف بدون استئذان"
         ];
 
-        let currentClass = '6ب1';
+        // الصف الافتراضي الأول
+        let currentClass = Object.keys(studentDatabase)[0];
         let studentPool = [];[cite: 1]
         let classStars = {};[cite: 1]
         let activeStudent = null;[cite: 1]
@@ -643,7 +644,7 @@
                 studentPool = [...all];
             }
 
-            if (studentPool.length === 0) {
+            if (studentPool.length === 0 && all.length > 0) {
                 studentPool = [...all];
                 savePoolData();
             }
@@ -1652,12 +1653,18 @@
             themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';[cite: 1]
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            Object.keys(studentDatabase).forEach(c => {
-                const opt1 = document.createElement('option');[cite: 1]
-                opt1.value = c;[cite: 1]
-                opt1.textContent = `الصف: ${c}`;[cite: 1]
-                classSelect.appendChild(opt1);[cite: 1]
+        // تهيئة القوائم المنسدلة والبيانات تلقائياً
+        function initApp() {
+            const classKeys = Object.keys(studentDatabase);
+            classSelect.innerHTML = '';
+            summaryClassSelect.innerHTML = '';
+            manualClassSelect.innerHTML = '';
+
+            classKeys.forEach(c => {
+                const opt1 = document.createElement('option');
+                opt1.value = c;
+                opt1.textContent = `الصف: ${c}`;
+                classSelect.appendChild(opt1);
 
                 const opt2 = document.createElement('option');
                 opt2.value = c;
@@ -1670,19 +1677,27 @@
                 manualClassSelect.appendChild(opt3);
             });
 
+            // ضبط الصف الافتراضي الأول في القوائم
+            currentClass = classKeys[0];
+            classSelect.value = currentClass;
+            summaryClassSelect.value = currentClass;
+            manualClassSelect.value = currentClass;
+
             manualDateInput.value = getDateStr();
 
-            const currentAutoPeriod = calculatePeriod();[cite: 1]
-            for (let i = 0; i < periodSelect.options.length; i++) {[cite: 1]
-                if (periodSelect.options[i].value === currentAutoPeriod) {[cite: 1]
-                    periodSelect.selectedIndex = i;[cite: 1]
-                    break;[cite: 1]
+            const currentAutoPeriod = calculatePeriod();
+            for (let i = 0; i < periodSelect.options.length; i++) {
+                if (periodSelect.options[i].value === currentAutoPeriod) {
+                    periodSelect.selectedIndex = i;
+                    break;
                 }
             }
 
-            loadClassData();[cite: 1]
-            spinMainBtn.onclick = executeQuickSpin;[cite: 1]
-        });
+            loadClassData();
+            spinMainBtn.onclick = executeQuickSpin;
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
