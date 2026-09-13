@@ -7,8 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800;900&display=swap');
 
         :root {
             --app-bg: #1e293b;
@@ -51,7 +52,7 @@
             top: 15px;
             left: 15px;
             right: auto;
-            width: 380px;
+            width: 390px;
             max-width: calc(100vw - 30px);
             height: calc(100vh - 30px);
             background-color: var(--app-bg);
@@ -74,21 +75,22 @@
 
         .student-result-card {
             background-color: var(--surface-bg);
-            border: 2px solid var(--border-color);
-            min-height: 80px;
-            max-height: 100px;
+            border: 2px solid #38bdf8;
+            min-height: 72px;
+            max-height: 85px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 8px 12px;
+            padding: 6px 12px;
             border-radius: 16px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .student-result-name {
-            font-size: clamp(1.05rem, 4vw, 1.35rem);
+            font-size: clamp(1.15rem, 4.2vw, 1.45rem);
             font-weight: 900;
-            line-height: 1.35;
+            line-height: 1.25;
             color: #38bdf8;
             word-break: break-word;
             display: -webkit-box;
@@ -98,10 +100,10 @@
         }
 
         .mini-rotator {
-            width: 32px;
-            height: 32px;
+            width: 18px;
+            height: 18px;
             background: linear-gradient(135deg, #f59e0b, #e11d48);
-            border-radius: 8px;
+            border-radius: 4px;
             animation: fast-spin 0.35s linear infinite;
             animation-play-state: paused;
         }
@@ -113,14 +115,25 @@
 
         .student-item {
             background-color: var(--surface-bg);
-            border: 1px solid var(--border-color);
+            border: 1.5px solid var(--border-color);
+            font-weight: 800;
+            font-size: 0.95rem;
             transition: all 0.15s;
         }
 
-        .student-item:hover { border-color: #38bdf8; }
+        .student-item:hover { 
+            border-color: #38bdf8;
+            transform: translateX(-2px);
+        }
+
         .student-item.has-stars {
             border-color: var(--gold);
-            background-color: rgba(245, 158, 11, 0.15);
+            background-color: rgba(245, 158, 11, 0.18);
+        }
+
+        .student-item.already-chosen {
+            opacity: 0.55;
+            background-color: rgba(15, 23, 42, 0.4);
         }
 
         .confetti-piece {
@@ -137,67 +150,26 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
 
-        .print-area { display: none; }
-
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 8mm 12mm;
+                margin: 0.8cm;
             }
-            html, body {
-                background: #ffffff !important;
-                color: #000000 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                height: auto !important;
-                overflow: visible !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, .confetti-piece {
-                display: none !important;
-            }
-            .print-area {
-                display: block !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            .header-banner {
-                width: 100% !important;
-                height: auto !important;
-                max-height: 180px !important;
-                object-fit: contain !important;
-                display: block !important;
-                margin: 0 auto 10px auto !important;
-            }
-            .print-table {
-                width: 100% !important;
-                table-layout: fixed !important;
-                border-collapse: collapse !important;
-            }
-            .print-table th, .print-table td {
-                border: 1.5px solid #333333 !important;
-                padding: 6px 8px !important;
-                font-size: 13px !important;
-            }
-            .print-table th {
-                background-color: #f1f5f9 !important;
-            }
-            .print-info-grid {
-                display: flex !important;
-                justify-content: space-between !important;
-                align-items: center !important;
-                font-size: 14px !important;
-                font-weight: bold !important;
-                margin-top: 10px !important;
-                padding: 0 5px !important;
-            }
-            .print-info-item {
-                display: inline-flex !important;
-                gap: 6px !important;
+            body { background: white !important; color: black !important; }
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal, #behavior-modal { display: none !important; }
+            .print-area { display: block !important; }
+            .single-student-notice {
+                page-break-after: always !important;
+                break-after: page !important;
+                height: 98vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                box-sizing: border-box;
+                padding-bottom: 20px;
             }
         }
+        .print-area { display: none; }
     </style>
 </head>
 <body>
@@ -209,27 +181,27 @@
     </button>
 
     <aside id="phone-panel" class="phone-widget">
-        <header class="p-3 border-b border-slate-700/60 bg-slate-900/40 flex justify-between items-center">
+        <!-- الرأس -->
+        <header class="p-2.5 border-b border-slate-700/60 bg-slate-900/40 flex justify-between items-center">
             <div>
                 <h1 class="text-xs font-black text-sky-400">قسم العلوم - مدرسة البلاد القديم</h1>
-                <p class="text-[10px] text-slate-400">إعداد: أ. صبري محمد حمد</p>
+                <p class="text-[10px] text-slate-400 font-bold">إعداد: أ. صبري محمد حمد</p>
             </div>
-            <div class="flex items-center gap-1.5">
-                <button id="history-modal-btn" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-amber-400 hover:bg-slate-700">السجل 📑</button>
+            <div class="flex items-center gap-1">
+                <button id="history-modal-btn" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-black text-amber-400 hover:bg-slate-700">السجل والتقارير 📑</button>
                 <button id="theme-btn" class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 text-xs flex items-center justify-center">🌙</button>
                 <button id="close-panel-btn" class="w-7 h-7 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-black flex items-center justify-center">✕</button>
             </div>
         </header>
 
-        <div class="p-3 flex flex-col gap-2 border-b border-slate-700/50 bg-slate-800/20">
-            <div class="grid grid-cols-2 gap-2">
+        <!-- الجزء العلوي -->
+        <div class="p-2.5 flex flex-col gap-2 border-b border-slate-700/50 bg-slate-800/20">
+            <div class="grid grid-cols-2 gap-1.5">
                 <div>
-                    <label class="block text-[10px] text-slate-400 mb-0.5 font-bold">الصف:</label>
-                    <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-bold rounded-xl px-2 py-1.5 outline-none focus:border-sky-400"></select>
+                    <select id="class-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300"></select>
                 </div>
                 <div>
-                    <label class="block text-[10px] text-slate-400 mb-0.5 font-bold">الحصة:</label>
-                    <select id="period-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-bold rounded-xl px-2 py-1.5 outline-none focus:border-sky-400 text-sky-300">
+                    <select id="period-select" class="w-full bg-slate-800 border border-slate-600 text-xs font-black rounded-lg px-2 py-1 outline-none text-sky-300">
                         <option value="الحصة الأولى">الحصة الأولى</option>
                         <option value="الحصة الثانية">الحصة الثانية</option>
                         <option value="الحصة الثالثة">الحصة الثالثة</option>
@@ -241,127 +213,287 @@
                 </div>
             </div>
 
-            <button id="spin-main-btn" class="w-full py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
-                <div id="mini-box" class="mini-rotator"></div>
-                <span>⚡ سحب عشوائي سريع (1ث)</span>
-            </button>
-
-            <div class="student-result-card">
-                <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
+            <div class="flex flex-col gap-1">
+                <button id="spin-main-btn" class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow active:scale-95 transition">
+                    <div id="mini-box" class="mini-rotator"></div>
+                    <span>⚡ سحب عادل (أولوية الأقل نجوماً)</span>
+                </button>
+                <div class="flex justify-between items-center px-1 text-[10px] text-slate-400 font-bold">
+                    <span>المتبقي في دورة السحب: <span id="pool-remaining" class="text-sky-300">0</span></span>
+                    <span id="pool-status" class="text-amber-400 text-[9px]"></span>
+                </div>
             </div>
 
-            <div id="quick-stars" class="grid grid-cols-4 gap-1.5 opacity-40 pointer-events-none transition-all">
-                <button data-val="1" class="score-btn py-1.5 rounded-xl bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
-                <button data-val="2" class="score-btn py-1.5 rounded-xl bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
-                <button data-val="3" class="score-btn py-1.5 rounded-xl bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐⭐ 3</button>
-                <button data-val="0" class="score-btn py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-red-400 font-bold text-[11px]">بدون (0)</button>
+            <!-- كرت الفائز -->
+            <div class="student-result-card flex items-center justify-center gap-2">
+                <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
+                <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
+            </div>
+
+            <!-- التقييم السريع -->
+            <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
+                <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
+                <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
+                <button data-val="3" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐⭐ 3</button>
+                <button data-val="0" class="score-btn py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-red-400 font-bold text-[10px]">بدون (0)</button>
             </div>
         </div>
 
+        <!-- قائمة الطلاب -->
         <div class="flex-grow overflow-hidden flex flex-col p-2.5">
-            <div class="flex justify-between items-center mb-1 text-[11px] text-slate-400">
-                <span>الطلاب (<span id="total-count">0</span>)</span>
-                <span>(نقرة: +⭐ | يمين: -⭐)</span>
+            <div class="flex justify-between items-center mb-1 text-xs text-slate-400 font-bold">
+                <span>الطلاب (<span id="total-count" class="text-amber-400">0</span>)</span>
+                <span class="text-[10px] text-slate-400">(يسار: +⭐ | يمين: رصد مخالفة -⭐)</span>
             </div>
             <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
         </div>
 
-        <footer class="p-2.5 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
-            <div class="grid grid-cols-2 gap-1.5 text-xs">
-                <button id="save-cloud-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1 shadow">
-                    ☁️ حفظ في الشيت
+        <!-- شريط العمليات -->
+        <footer class="p-2 border-t border-slate-700/60 bg-slate-900/40 flex flex-col gap-1.5">
+            <div class="grid grid-cols-2 gap-1.5 text-xs font-black">
+                <button id="save-new-session-btn" class="py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow">
+                    💾 حفظ وبدء حصة جديدة
                 </button>
-                <button id="print-current-btn" class="py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center justify-center gap-1 shadow">
-                    🖨️ طباعة الحصة
+                <button id="print-current-btn" class="py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center gap-1 shadow">
+                    📄 تحميل PDF سريع
                 </button>
             </div>
-            <button id="reset-session-btn" class="py-1 text-[10px] text-slate-400 hover:text-red-400 transition text-center">
-                تصفير نجوم الحصة الحالية
-            </button>
+            <div class="flex justify-between items-center px-1 text-[10px] text-slate-400 font-bold">
+                <button id="print-behavior-btn" class="text-amber-400 hover:underline">📋 طباعة إشعارات المخالفات</button>
+                <button id="reset-session-btn" class="hover:text-red-400 transition">تصفير الحصة الحالية</button>
+            </div>
         </footer>
     </aside>
 
-    <!-- نافذة السجل -->
-    <div id="history-modal" class="fixed inset-0 bg-black/80 z-[10005] hidden items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-md p-4 flex flex-col max-h-[85vh]">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
-                <h3 class="font-bold text-amber-400 text-sm">سجل الحصص المحفوظة</h3>
-                <button id="close-history-modal" class="text-slate-400 hover:text-white font-bold">✕</button>
+    <!-- نافذة رصد مخالفة سلوكية -->
+    <div id="behavior-modal" class="fixed inset-0 bg-black/85 z-[10008] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-sm p-4 flex flex-col gap-3 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <div>
+                    <h3 class="font-bold text-red-400 text-sm">⚠️ رصد مخالفة سلوكية</h3>
+                    <p id="behavior-student-name" class="text-xs text-sky-300 font-bold mt-0.5"></p>
+                </div>
+                <button id="close-behavior-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
             </div>
-            <div id="history-sessions-list" class="flex-grow overflow-y-auto space-y-2 pr-1 text-xs"></div>
+
+            <div>
+                <label class="block text-[11px] text-slate-300 font-bold mb-1">اختر نوع المخالفة:</label>
+                <select id="behavior-reason-select" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-xs text-amber-300 font-bold outline-none"></select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-300 font-bold mb-1">أو أضف مخالفة جديدة وحفظها بالقائمة:</label>
+                <div class="flex gap-1.5">
+                    <input type="text" id="behavior-custom-input" placeholder="اكتب مخالفة جديدة..." class="flex-grow bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-100 outline-none">
+                    <button id="add-reason-to-list-btn" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold">+ حفظ</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-300 font-bold mb-1">عدد النجوم المخصومة:</label>
+                <select id="behavior-stars-deduct" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-1.5 text-xs text-red-400 font-bold outline-none">
+                    <option value="1">خصم نجمة واحدة (-⭐ 1)</option>
+                    <option value="2">خصم نجمتين (-⭐⭐ 2)</option>
+                    <option value="3">خصم ثلاث نجوم (-⭐⭐⭐ 3)</option>
+                </select>
+            </div>
+
+            <button id="confirm-deduct-btn" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow mt-1">
+                تأكيد خصم النجوم ورصد المخالفة
+            </button>
         </div>
     </div>
 
-    <!-- نافذة تعديل الحصة المؤرشفة -->
-    <div id="edit-session-modal" class="fixed inset-0 bg-black/80 z-[10006] hidden items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-md p-4 flex flex-col max-h-[85vh]">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
-                <h3 id="edit-modal-title" class="font-bold text-sky-400 text-sm">تعديل الحصة</h3>
-                <button id="close-edit-modal" class="text-slate-400 hover:text-white font-bold">✕</button>
-            </div>
-            
-            <div class="flex gap-2 mb-3">
-                <select id="add-student-to-session-select" class="flex-grow bg-slate-700 border border-slate-600 rounded-xl px-2 py-1 text-xs font-bold outline-none"></select>
-                <button id="add-student-to-session-btn" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 rounded-xl font-bold text-xs">+ إضافة</button>
+    <!-- نافذة السجل والتقارير المجمعة -->
+    <div id="history-modal" class="fixed inset-0 bg-black/85 z-[10005] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-xl p-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div class="flex items-center gap-2">
+                    <button id="tab-sessions-btn" class="px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950">📋 الحصص السابقة</button>
+                    <button id="tab-summary-btn" class="px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white">📊 التجميع والإحصاء</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="open-manual-modal-btn" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-[11px]">➕ إضافة حصة ورقية</button>
+                    <button id="cloud-sync-btn" class="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[11px] font-bold">🔄 تحديث من الشيت</button>
+                    <button id="close-history-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+                </div>
             </div>
 
-            <div id="edit-students-list" class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs mb-3"></div>
+            <div id="tab-sessions-content" class="flex-grow overflow-y-auto space-y-2 pr-1 text-xs">
+                <div id="history-sessions-list" class="space-y-2"></div>
+            </div>
 
-            <div class="flex justify-end gap-2 border-t border-slate-700 pt-3">
-                <button id="cancel-edit-btn" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs font-bold">إلغاء</button>
-                <button id="save-edited-session-btn" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">حفظ التعديلات</button>
+            <div id="tab-summary-content" class="hidden flex-grow overflow-y-auto space-y-3 pr-1 text-xs">
+                <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 font-bold">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">الصف:</label>
+                        <select id="summary-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">النطاق الزمني:</label>
+                        <select id="summary-range-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-sky-400 font-bold outline-none">
+                            <option value="week">خلال الأسبوع الحالي</option>
+                            <option value="month">خلال الشهر الحالي</option>
+                            <option value="all">كل السجلات المتوفرة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center px-1">
+                    <span id="summary-count-info" class="text-xs font-bold text-slate-300">إجمالي المتميزين: 0</span>
+                    <div class="flex gap-2 font-bold">
+                        <button id="export-summary-excel-btn" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل التجميع</button>
+                        <button id="print-summary-btn" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">📄 تحميل تقرير PDF</button>
+                    </div>
+                </div>
+
+                <div class="border border-slate-700 rounded-xl overflow-hidden font-bold">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-900 text-slate-300">
+                            <tr>
+                                <th class="p-2 text-center w-10">#</th>
+                                <th class="p-2">اسم الطالب</th>
+                                <th class="p-2 text-center">مجموع النجوم</th>
+                                <th class="p-2 text-center">مرات المشاركة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table-body" class="divide-y divide-slate-700/60 bg-slate-800/60 font-semibold"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- تقرير الطباعة الرسمي A4 -->
-    <div class="print-area" id="print-sheet">
-        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" class="header-banner">
-
-        <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #b45309; padding-bottom: 8px;">
-            <h2 style="font-size: 19px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
-            
-            <div class="print-info-grid">
-                <div class="print-info-item"><span>الصف:</span> <span id="p-class" style="color: #1e3a8a;"></span></div>
-                <div class="print-info-item"><span>اليوم:</span> <span id="p-day"></span></div>
-                <div class="print-info-item"><span>التاريخ:</span> <span id="p-date"></span></div>
-                <div class="print-info-item"><span>الحصة:</span> <span id="p-period" style="color: #b45309;"></span></div>
+    <!-- نافذة إدخال حصة سابقة يدوياً -->
+    <div id="manual-session-modal" class="fixed inset-0 bg-black/90 z-[10007] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[92vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div>
+                    <h3 class="font-bold text-amber-400 text-sm">➕ إدخال كشف حصة سابقة (ورقية)</h3>
+                    <p class="text-[10px] text-slate-400 font-bold">اختر الصف والتاريخ والحصة ثم رصد النجوم</p>
+                </div>
+                <button id="close-manual-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
             </div>
-        </div>
 
-        <table class="print-table">
-            <thead>
-                <tr>
-                    <th style="width: 8%; text-align: center;">#</th>
-                    <th style="width: 67%; text-align: right;">اسم الطالب</th>
-                    <th style="width: 25%; text-align: center;">نقاط المشاركة</th>
-                </tr>
-            </thead>
-            <tbody id="print-rows"></tbody>
-        </table>
-
-        <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; font-weight: bold; padding: 0 30px;">
-            <div style="text-align: center;">
-                <div>معلم المادة</div>
-                <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+            <div class="grid grid-cols-3 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700 mb-2 font-bold text-xs">
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">الصف:</label>
+                    <select id="manual-class-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-amber-400 outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">التاريخ:</label>
+                    <input type="date" id="manual-date-input" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-sky-300 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">الحصة:</label>
+                    <select id="manual-period-select" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1 text-sky-300 outline-none">
+                        <option value="الحصة الأولى">الحصة الأولى</option>
+                        <option value="الحصة الثانية">الحصة الثانية</option>
+                        <option value="الحصة الثالثة">الحصة الثالثة</option>
+                        <option value="الحصة الرابعة">الحصة الرابعة</option>
+                        <option value="الحصة الخامسة">الحصة الخامسة</option>
+                        <option value="الحصة السادسة">الحصة السادسة</option>
+                        <option value="الحصة السابعة">الحصة السابعة</option>
+                    </select>
+                </div>
             </div>
-            <div style="text-align: center;">
-                <div>مدير المدرسة</div>
-                <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+
+            <div class="flex justify-between items-center mb-1 text-[11px] text-slate-400 font-bold px-1">
+                <span>اضغط لتحديد النجوم:</span>
+                <span>(نقرة: +⭐ | يمين: -⭐)</span>
+            </div>
+
+            <div class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs" id="manual-students-list"></div>
+
+            <div class="border-t border-slate-700 pt-2.5 mt-2">
+                <button id="save-manual-session-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow">
+                    💾 حفظ الحصة وإرسالها للشيت
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- نافذة تعديل حصة سابقة -->
+    <div id="edit-session-modal" class="fixed inset-0 bg-black/85 z-[10006] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div>
+                    <h3 class="font-bold text-amber-400 text-sm">تعديل كشف حصة سابقة</h3>
+                    <p id="edit-session-subtitle" class="text-[10px] text-slate-400 font-bold"></p>
+                </div>
+                <button id="close-edit-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+            </div>
+
+            <div class="flex gap-2 mb-2">
+                <select id="edit-add-student-select" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-bold outline-none"></select>
+                <button id="edit-add-student-btn" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg">+ إضافة طالب</button>
+            </div>
+
+            <div class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs" id="edit-records-list"></div>
+
+            <div class="border-t border-slate-700 pt-2.5 mt-2">
+                <button id="save-edited-session-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow">
+                    💾 حفظ التغييرات وتحديث الشيت محلياً وسحابياً
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- حاوية مستند الـ PDF للمشاركات -->
+    <div style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="print-sheet">
+            <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+                <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 140px; object-fit: contain;">
+            </div>
+
+            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #b45309; padding-bottom: 8px;">
+                <h2 id="print-main-title" style="font-size: 19px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
+                <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 8px; color: #333;">
+                    <span id="p-class">الصف: </span>
+                    <span id="p-day">اليوم: </span>
+                    <span id="p-date">التاريخ: </span>
+                    <span id="p-period">الحصة: </span>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #333; padding: 6px; width: 45px; text-align: center;">#</th>
+                        <th style="border: 1px solid #333; padding: 6px; text-align: right;">اسم الطالب</th>
+                        <th id="th-stars-col" style="border: 1px solid #333; padding: 6px; width: 120px; text-align: center;">نقاط المشاركة</th>
+                        <th id="th-extra-col" style="display: none; border: 1px solid #333; padding: 6px; width: 100px; text-align: center;">عدد الحصص</th>
+                    </tr>
+                </thead>
+                <tbody id="print-rows"></tbody>
+            </table>
+
+            <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; font-weight: bold; padding: 0 20px;">
+                <div style="text-align: center;">
+                    <div>معلم المادة</div>
+                    <div style="margin-top: 10px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                </div>
+                <div style="text-align: center;">
+                    <div>مدير المدرسة</div>
+                    <div style="margin-top: 10px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- منطقة طباعة المخالفات السلوكية الفردية -->
+    <div class="print-area" id="print-behavior-area"></div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";[cite: 1]
 
         const studentDatabase = {
             '6ب1': [
                 "ابراهيم على خليل الحايكي", "السيد حسن صالح الموسوي", "السيد هاشم مجيد فيصل محمد",
                 "إيليا سعيد حسن حسن", "حسن عقيل حسن البني", "حسن على ميرزا خليل",
-                "حسين اسامه عبد الجليل الجشي", "حسين عمار جاسم الاسكافي", "حيدر على ابراهيم حسن",
-                "سيد صادق جعفر على ناصر", "سيد حامد حسين محمد درويش", "صادق على عبدالله اسماعيل",
-                "عبد العزيز جلال عبد العزيز حاجي عبدالله", "عبدالله حسين عبدالله مال الله", "عبدالله على عباس شاهين",
+                "حسین اسامه عبد الجليل الجشي", "حسين عمار جاسم الاسكافي", "حيدر على ابراهيم حسن",
+                "سيد صادق جعفر على ناصر", "سيد حامد حسین محمد درویش", "صادق على عبدالله اسماعيل",
+                "عبد العزيز جلال عبد العزيز حاجی عبدالله", "عبدالله حسین عبدالله مال الله", "عبدالله على عباس شاهين",
                 "على حسين على عبد على", "على عيسى ابراهيم الستراوي", "على قاسم عباس حسن",
                 "عمار محمد عبد الامير الحصار", "غسان مهند عقيل مرهون", "قاسم محمد احمد حسن",
                 "ليث محمود مسعود الوطني", "محمد صالح شوقي البناء", "محمد عباس خميس السودان",
@@ -378,7 +510,7 @@
                 "عادل محمد عادل الترنج", "عباس عبدالله ابراهيم ال عميري", "على فيصل مختار محمد",
                 "على محمود على الصفار", "علي يوسف سلمان الصفار", "محمد باقر حسن محمد باقر نعمه",
                 "محمد حسن عيسى أحمد على", "محمد حسين جعفر مال الله", "منتظر حسن صالح الصيرفي"
-            ],
+            ],[cite: 1]
             '2ع2': [
                 "احمد باسم ابراهيم الخنيزي", "السيدحيدر فيصل علوي ناصر", "إلياس بن شاكر بن على البراهيم",
                 "امير محمد عبد الامير رضی", "بدر طاهر عبدالرسول جديد", "حسن محمد حسن عيسى",
@@ -390,7 +522,7 @@
                 "على مصطفى على العلى", "فيصل احمد عباس زبيل", "محسن ابراهيم محسن عبد الرسول",
                 "محمد جلال عيسى نعمه", "محمد صادق احمد مشيمع", "محمد نادر ميرزا العرادي",
                 "مصطفى احمد محمد الاسكافي", "هيثم فاضل ابراهيم اسماعيل", "يوسف ابراهيم على الصفار"
-            ],
+            ],[cite: 1]
             '2ع3': [
                 "السيد حسن ابراهيم محمد علوي", "السيد عباس حسين ناصر شرف", "السيد عباس فاضل على الموسوي",
                 "السيد على حسين نزار علوى", "السيدحيدر على مهدي يوسف", "ايمن جاسم احمد نصيف",
@@ -402,7 +534,7 @@
                 "عيسى على عيسى النكاس", "كريم فائق عبد الكريم على", "مجتبى مرتضى ميرزا السطيح",
                 "محمد حسن عبدالله امان", "محمد خالد احمد علي", "محمد عباس عبدالله مرهون",
                 "محمد على ابراهيم محمد على ال مرهون", "مهدي حسين اكبر محسن", "يوسف زهير عبد الوهاب غزوان"
-            ],
+            ],[cite: 1]
             '2ع4': [
                 "السيد حسين ماجد اسماعيل ناصر", "السيد على احمد عدنان البلادي", "السيد محسن ياسر عبدالله ناصر",
                 "السيد محمد على حمزه عبدالله", "جعفر صادق حسن الصفار", "جواد عبدالمجيد حسن راشد",
@@ -415,198 +547,303 @@
                 "محمد على شاكر عبدالله خميس", "محمد هشام ايوب سوار", "محمد يونس خليل محمد",
                 "محمود ياسر محمد على", "مصطفى محمود عبدالله السابوري", "مهدي احمد عبد الرسول احمد على",
                 "مهدي عبد الحسين ميرزا على", "مهدي محمد مهدي عبدالله"
-            ]
+            ][cite: 1]
         };
 
+        const defaultBehaviorReasons = [
+            "الأحاديث الجانبية أثناء الشرح",
+            "عدم متابعة الشرح والتشتت",
+            "عدم إحضار الملزمة أو الكتاب",
+            "الحركة داخل الصف بدون إذن",
+            "إهمال أداء الواجب أو النشاط الصفي",
+            "مقاطعة المعلم أو زملاء الصف بدون استئذان"
+        ];
+
         let currentClass = '6ب1';
-        let studentPool = [];
-        let classStars = {};
-        let activeStudent = null;
-        let isSpinning = false;
-        let editingSessionIndex = null;
-        let tempEditingRecords = [];
+        let studentPool = [];[cite: 1]
+        let classStars = {};[cite: 1]
+        let activeStudent = null;[cite: 1]
+        let isSpinning = false;[cite: 1]
+        let editingSessionId = null;
+        let manualSessionStars = {};
+        let studentToDeduct = null;
 
         const audioSynth = new Tone.Synth({
             oscillator: { type: "sine" },
             envelope: { attack: 0.02, decay: 0.1, sustain: 0.01, release: 0.1 }
-        }).toDestination();
+        }).toDestination();[cite: 1]
 
         function getDayName(d = new Date()) {
-            return d.toLocaleDateString('ar-BH', { weekday: 'long' });
+            return d.toLocaleDateString('ar-BH', { weekday: 'long' });[cite: 1]
         }
 
         function getDateStr(d = new Date()) {
-            return d.toLocaleDateString('ar-BH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function parseStandardDate(str) {
+            if (!str) return new Date();
+            let standard = String(str).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+            standard = standard.replace(/[\/\\]/g, '-').trim();
+            const parts = standard.split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                if (parts[2].length === 4) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+            return new Date(standard);
         }
 
         function calculatePeriod() {
-            const now = new Date();
-            const mins = now.getHours() * 60 + now.getMinutes();
+            const now = new Date();[cite: 1]
+            const mins = now.getHours() * 60 + now.getMinutes();[cite: 1]
             const timetable = [
                 [435, 480, 'الحصة الأولى'], [480, 525, 'الحصة الثانية'], [525, 570, 'الحصة الثالثة'],
                 [570, 600, 'الحصة الرابعة'], [600, 645, 'الحصة الرابعة'], [645, 690, 'الحصة الخامسة'],
                 [690, 705, 'الحصة السادسة'], [705, 750, 'الحصة السادسة'], [750, 795, 'الحصة السابعة']
-            ];
+            ];[cite: 1]
             for (const [start, end, label] of timetable) {
-                if (mins >= start && mins < end) return label;
+                if (mins >= start && mins < end) return label;[cite: 1]
             }
-            return 'الحصة الأولى';
+            return 'الحصة الأولى';[cite: 1]
         }
 
-        const phonePanel = document.getElementById('phone-panel');
-        const togglePanelBtn = document.getElementById('toggle-panel-btn');
-        const closePanelBtn = document.getElementById('close-panel-btn');
-        const classSelect = document.getElementById('class-select');
-        const periodSelect = document.getElementById('period-select');
-        const spinMainBtn = document.getElementById('spin-main-btn');
-        const miniBox = document.getElementById('mini-box');
-        const targetStudentName = document.getElementById('target-student-name');
-        const quickStars = document.getElementById('quick-stars');
-        const studentsContainer = document.getElementById('students-container');
-        const totalCount = document.getElementById('total-count');
-        const themeBtn = document.getElementById('theme-btn');
+        const phonePanel = document.getElementById('phone-panel');[cite: 1]
+        const togglePanelBtn = document.getElementById('toggle-panel-btn');[cite: 1]
+        const closePanelBtn = document.getElementById('close-panel-btn');[cite: 1]
+        const classSelect = document.getElementById('class-select');[cite: 1]
+        const periodSelect = document.getElementById('period-select');[cite: 1]
+        const spinMainBtn = document.getElementById('spin-main-btn');[cite: 1]
+        const miniBox = document.getElementById('mini-box');[cite: 1]
+        const targetStudentName = document.getElementById('target-student-name');[cite: 1]
+        const targetStudentStars = document.getElementById('target-student-stars');
+        const quickStars = document.getElementById('quick-stars');[cite: 1]
+        const studentsContainer = document.getElementById('students-container');[cite: 1]
+        const totalCount = document.getElementById('total-count');[cite: 1]
+        const poolRemaining = document.getElementById('pool-remaining');
+        const poolStatus = document.getElementById('pool-status');
+        const themeBtn = document.getElementById('theme-btn');[cite: 1]
 
-        const toggleWidget = () => phonePanel.classList.toggle('minimized');
-        togglePanelBtn.onclick = toggleWidget;
-        closePanelBtn.onclick = toggleWidget;
+        const toggleWidget = () => phonePanel.classList.toggle('minimized');[cite: 1]
+        togglePanelBtn.onclick = toggleWidget;[cite: 1]
+        closePanelBtn.onclick = toggleWidget;[cite: 1]
 
         function loadClassData() {
-            const saved = localStorage.getItem(`widget_session_${currentClass}`);
-            classStars = saved ? JSON.parse(saved) : {};
-            const all = studentDatabase[currentClass] || [];
-            studentPool = all.filter(s => !classStars.hasOwnProperty(s));
-            if (studentPool.length === 0) studentPool = [...all];
+            const savedStars = localStorage.getItem(`widget_session_${currentClass}`);
+            classStars = savedStars ? JSON.parse(savedStars) : {};
+
+            const savedPool = localStorage.getItem(`widget_pool_${currentClass}`);
+            const all = studentDatabase[currentClass] || [];[cite: 1]
+
+            if (savedPool) {
+                studentPool = JSON.parse(savedPool);
+            } else {
+                studentPool = [...all];
+            }
+
+            if (studentPool.length === 0) {
+                studentPool = [...all];
+                savePoolData();
+            }
+
+            updatePoolDisplay();
             renderStudentList();
+            updateTargetCardStars();
         }
 
         function saveClassData() {
             localStorage.setItem(`widget_session_${currentClass}`, JSON.stringify(classStars));
         }
 
+        function savePoolData() {
+            localStorage.setItem(`widget_pool_${currentClass}`, JSON.stringify(studentPool));
+        }
+
+        function updatePoolDisplay() {
+            const all = studentDatabase[currentClass] || [];[cite: 1]
+            poolRemaining.textContent = `${studentPool.length} من ${all.length}`;
+            if (studentPool.length === all.length) {
+                poolStatus.textContent = "(دورة سحب جديدة)";
+            } else if (studentPool.length === 0) {
+                poolStatus.textContent = "(اكتملت الدورة)";
+            } else {
+                poolStatus.textContent = "";
+            }
+        }
+
+        function updateTargetCardStars() {
+            if (activeStudent) {
+                const s = classStars[activeStudent] || 0;
+                targetStudentStars.textContent = s > 0 ? `⭐ ${s}` : '';
+                targetStudentStars.classList.toggle('hidden', s === 0);
+            } else {
+                targetStudentStars.classList.add('hidden');
+            }
+        }
+
         function renderStudentList() {
-            studentsContainer.innerHTML = '';
-            const all = studentDatabase[currentClass] || [];
-            totalCount.textContent = all.length;
+            studentsContainer.innerHTML = '';[cite: 1]
+            const all = studentDatabase[currentClass] || [];[cite: 1]
+            totalCount.textContent = all.length;[cite: 1]
 
             all.forEach((name, i) => {
-                const stars = classStars[name] || 0;
-                const row = document.createElement('div');
-                row.className = `student-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer ${stars > 0 ? 'has-stars' : ''}`;
-                
-                let starText = stars > 0 ? '⭐ ' + stars : '';
+                const stars = classStars[name] || 0;[cite: 1]
+                const isChosenInThisCycle = !studentPool.includes(name);
 
+                const row = document.createElement('div');[cite: 1]
+                row.className = `student-item p-2 rounded-xl flex items-center justify-between cursor-pointer ${stars > 0 ? 'has-stars' : ''} ${isChosenInThisCycle ? 'already-chosen' : ''}`;
                 row.innerHTML = `
-                    <span class="truncate font-semibold">${i + 1}. ${name}</span>
-                    <span class="text-amber-400 font-bold">${starText}</span>
+                    <div class="flex items-center gap-1.5 truncate">
+                        <span class="truncate font-black tracking-wide">${i + 1}. ${name}</span>
+                        ${isChosenInThisCycle ? '<span class="text-[9px] text-sky-400 font-bold bg-sky-950/60 px-1.5 py-0.5 rounded">شارك</span>' : ''}
+                    </div>
+                    <span class="text-amber-400 font-black text-sm">${stars > 0 ? '⭐ ' + stars : ''}</span>
                 `;
 
                 row.onclick = () => {
-                    classStars[name] = (classStars[name] || 0) + 1;
-                    saveClassData();
-                    renderStudentList();
+                    classStars[name] = (classStars[name] || 0) + 1;[cite: 1]
+                    saveClassData();[cite: 1]
+                    renderStudentList();[cite: 1]
+                    if (activeStudent === name) updateTargetCardStars();
                 };
 
                 row.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    if (classStars[name] > 0) {
-                        classStars[name]--;
-                        if (classStars[name] === 0) delete classStars[name];
-                        saveClassData();
-                        renderStudentList();
-                    }
+                    e.preventDefault();[cite: 1]
+                    openBehaviorModal(name);
                 };
 
-                studentsContainer.appendChild(row);
+                studentsContainer.appendChild(row);[cite: 1]
             });
         }
 
         function launchConfetti() {
-            for (let i = 0; i < 35; i++) {
-                const piece = document.createElement('div');
-                piece.className = 'confetti-piece';
-                piece.style.left = `${Math.random() * 100}vw`;
-                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 55%)`;
-                piece.style.top = `-10px`;
-                document.body.appendChild(piece);
-                setTimeout(() => piece.remove(), 2000);
+            for (let i = 0; i < 35; i++) {[cite: 1]
+                const piece = document.createElement('div');[cite: 1]
+                piece.className = 'confetti-piece';[cite: 1]
+                piece.style.left = `${Math.random() * 100}vw`;[cite: 1]
+                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 55%)`;[cite: 1]
+                piece.style.top = `-10px`;[cite: 1]
+                document.body.appendChild(piece);[cite: 1]
+                setTimeout(() => piece.remove(), 2000);[cite: 1]
             }
         }
 
         async function executeQuickSpin() {
-            if (isSpinning) return;
+            if (isSpinning) return;[cite: 1]
 
-            const list = studentDatabase[currentClass] || [];
-            if (studentPool.length === 0) studentPool = [...list];
+            const all = studentDatabase[currentClass] || [];[cite: 1]
+            if (studentPool.length === 0) {
+                studentPool = [...all];[cite: 1]
+                savePoolData();
+                updatePoolDisplay();
+            }
 
-            try { await Tone.start(); } catch(e) {}
+            let minStars = Infinity;
+            studentPool.forEach(student => {
+                const s = classStars[student] || 0;
+                if (s < minStars) minStars = s;
+            });
 
-            isSpinning = true;
-            spinMainBtn.disabled = true;
-            quickStars.classList.add('opacity-40', 'pointer-events-none');
-            miniBox.style.animationPlayState = 'running';
-            targetStudentName.textContent = 'جاري السحب...';
+            const eligibleCandidates = studentPool.filter(student => {
+                return (classStars[student] || 0) === minStars;
+            });
 
-            const randIndex = Math.floor(Math.random() * studentPool.length);
-            const winner = studentPool[randIndex];
+            try { await Tone.start(); } catch(e) {}[cite: 1]
+
+            isSpinning = true;[cite: 1]
+            spinMainBtn.disabled = true;[cite: 1]
+            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
+            miniBox.style.animationPlayState = 'running';[cite: 1]
+            targetStudentName.textContent = 'جاري السحب العادل...';
+            targetStudentStars.classList.add('hidden');
+
+            const randIndex = Math.floor(Math.random() * eligibleCandidates.length);
+            const winner = eligibleCandidates[randIndex];
 
             setTimeout(() => {
-                miniBox.style.animationPlayState = 'paused';
-                activeStudent = winner;
-                targetStudentName.textContent = winner;
+                miniBox.style.animationPlayState = 'paused';[cite: 1]
+                activeStudent = winner;[cite: 1]
+                targetStudentName.textContent = winner;[cite: 1]
+                updateTargetCardStars();
 
-                studentPool.splice(randIndex, 1);
-                audioSynth.triggerAttackRelease("E5", "8n");
-                launchConfetti();
+                const poolIndex = studentPool.indexOf(winner);
+                if (poolIndex > -1) {
+                    studentPool.splice(poolIndex, 1);
+                    savePoolData();
+                }
 
-                quickStars.classList.remove('opacity-40', 'pointer-events-none');
-                isSpinning = false;
-                spinMainBtn.disabled = false;
-            }, 1000);
+                updatePoolDisplay();
+                renderStudentList();
+
+                audioSynth.triggerAttackRelease("E5", "8n");[cite: 1]
+                launchConfetti();[cite: 1]
+
+                quickStars.classList.remove('opacity-40', 'pointer-events-none');[cite: 1]
+                isSpinning = false;[cite: 1]
+                spinMainBtn.disabled = false;[cite: 1]
+            }, 1000);[cite: 1]
         }
 
         document.querySelectorAll('.score-btn').forEach(b => {
             b.onclick = () => {
-                if (!activeStudent) return;
-                const val = parseInt(b.dataset.val);
+                if (!activeStudent) return;[cite: 1]
+                const val = parseInt(b.dataset.val);[cite: 1]
                 if (val > 0) {
-                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;
+                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;[cite: 1]
                 } else {
-                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;
+                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;[cite: 1]
                 }
-                saveClassData();
-                renderStudentList();
+                saveClassData();[cite: 1]
+                renderStudentList();[cite: 1]
+                updateTargetCardStars();
             };
         });
 
-        function archiveSessionLocally(records) {
-            let history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
-            history.unshift({
-                id: Date.now(),
-                day: getDayName(),
-                date: getDateStr(),
-                className: currentClass,
-                period: periodSelect.value,
-                records: records
-            });
+        function getArchiveHistory() {
+            return JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
+        }
+
+        function saveArchiveHistory(history) {
             localStorage.setItem('sessions_archive_history', JSON.stringify(history));
         }
 
-        document.getElementById('save-cloud-btn').onclick = async () => {
-            const all = studentDatabase[currentClass] || [];
+        function archiveSessionLocally(records, cls = currentClass, period = periodSelect.value, dStr = getDateStr(), day = getDayName()) {
+            let history = getArchiveHistory();
+            history.unshift({
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                timestamp: new Date(dStr).toISOString(),
+                day: day,
+                date: dStr,
+                className: cls,
+                period: period,
+                records: records
+            });
+            saveArchiveHistory(history);
+        }
+
+        document.getElementById('save-new-session-btn').onclick = async () => {
+            const all = studentDatabase[currentClass] || [];[cite: 1]
             const participants = all
-                .map(name => ({ name, stars: classStars[name] || 0 }))
-                .filter(p => p.stars > 0);
+                .map(name => ({ name, stars: classStars[name] || 0 }))[cite: 1]
+                .filter(p => p.stars > 0);[cite: 1]
 
             if (participants.length === 0) {
-                alert('لا توجد نجوم مشاركة مسجلة لحفظها.');
+                if (confirm(`لا توجد نجوم مسجلة حالياً لصف (${currentClass}). هل تريد تصفير الحصة وبدء حصة جديدة؟`)) {
+                    resetCurrentSessionDirectly();
+                }
                 return;
             }
 
-            const day = getDayName();
-            const date = getDateStr();
-            const period = periodSelect.value;
+            const day = getDayName();[cite: 1]
+            const date = getDateStr();[cite: 1]
+            const period = periodSelect.value;[cite: 1]
+
+            archiveSessionLocally(participants, currentClass, period, date, day);
 
             const payload = {
+                action: "append",
                 records: participants.map(p => ({
                     day: day,
                     date: date,
@@ -617,10 +854,8 @@
                 }))
             };
 
-            archiveSessionLocally(participants);
-
-            const btn = document.getElementById('save-cloud-btn');
-            btn.innerHTML = '⏳ جاري الإرسال للشيت...';
+            const btn = document.getElementById('save-new-session-btn');
+            btn.innerHTML = '⏳ جاري الحفظ...';
             btn.disabled = true;
 
             try {
@@ -630,256 +865,823 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                alert('تم إرسال النتائج وتخزينها بنجاح في Google Sheets!');
             } catch(e) {
-                alert('تعذر الاتصال بـ Google Sheets، ولكن تم حفظ الحصة محلياً في السجل.');
+                console.log("حفظ محلي");
             } finally {
-                btn.innerHTML = '☁️ حفظ في الشيت';
+                btn.innerHTML = '💾 حفظ وبدء حصة جديدة';
                 btn.disabled = false;
+                resetCurrentSessionDirectly();
+                alert(`تم حفظ حصة (${currentClass} - ${period}) بنجاح وبدء حصة جديدة!`);
             }
         };
 
-        function triggerOfficialPrint(cls, day, date, period, records) {
-            document.getElementById('p-class').textContent = cls;
-            document.getElementById('p-day').textContent = day;
-            document.getElementById('p-date').textContent = date;
-            document.getElementById('p-period').textContent = period;
+        function resetCurrentSessionDirectly() {
+            classStars = {};
+            localStorage.removeItem(`widget_session_${currentClass}`);
+            studentPool = [...(studentDatabase[currentClass] || [])];
+            savePoolData();
+
+            activeStudent = null;[cite: 1]
+            targetStudentName.textContent = 'اضغط للبدء';[cite: 1]
+            targetStudentStars.classList.add('hidden');
+            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
+            loadClassData();
+        }
+
+        document.getElementById('reset-session-btn').onclick = () => {
+            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية بدون حفظ؟`)) {[cite: 1]
+                resetCurrentSessionDirectly();
+            }
+        };
+
+        const behaviorModal = document.getElementById('behavior-modal');
+        const behaviorStudentName = document.getElementById('behavior-student-name');
+        const behaviorReasonSelect = document.getElementById('behavior-reason-select');
+        const behaviorCustomInput = document.getElementById('behavior-custom-input');
+        const behaviorStarsDeduct = document.getElementById('behavior-stars-deduct');
+
+        function getStoredReasons() {
+            return JSON.parse(localStorage.getItem('behavior_reasons_list')) || defaultBehaviorReasons;
+        }
+
+        function loadBehaviorReasons() {
+            const list = getStoredReasons();
+            behaviorReasonSelect.innerHTML = '';
+            list.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = r;
+                behaviorReasonSelect.appendChild(opt);
+            });
+        }
+
+        function openBehaviorModal(stName) {
+            studentToDeduct = stName;
+            behaviorStudentName.textContent = `الطالب: ${stName} (الصف: ${currentClass})`;
+            behaviorCustomInput.value = '';
+            loadBehaviorReasons();
+            behaviorModal.classList.remove('hidden');
+            behaviorModal.classList.add('flex');
+        }
+
+        document.getElementById('close-behavior-modal').onclick = () => {
+            behaviorModal.classList.add('hidden');
+            behaviorModal.classList.remove('flex');
+        };
+
+        document.getElementById('add-reason-to-list-btn').onclick = () => {
+            const val = behaviorCustomInput.value.trim();
+            if (!val) return;
+            let list = getStoredReasons();
+            if (!list.includes(val)) {
+                list.push(val);
+                localStorage.setItem('behavior_reasons_list', JSON.stringify(list));
+                loadBehaviorReasons();
+                behaviorReasonSelect.value = val;
+                behaviorCustomInput.value = '';
+            }
+        };
+
+        function getBehaviorLog() {
+            return JSON.parse(localStorage.getItem('behavior_incidents_log')) || [];
+        }
+
+        function saveBehaviorLog(log) {
+            localStorage.setItem('behavior_incidents_log', JSON.stringify(log));
+        }
+
+        document.getElementById('confirm-deduct-btn').onclick = () => {
+            if (!studentToDeduct) return;
+            const deductVal = parseInt(behaviorStarsDeduct.value);
+            const reason = behaviorReasonSelect.value || "مخالفة سلوكية";
+
+            const currentVal = classStars[studentToDeduct] || 0;
+            classStars[studentToDeduct] = Math.max(0, currentVal - deductVal);
+            saveClassData();
+            renderStudentList();
+            if (activeStudent === studentToDeduct) updateTargetCardStars();
+
+            const log = getBehaviorLog();
+            log.unshift({
+                id: Date.now(),
+                studentName: studentToDeduct,
+                className: currentClass,
+                period: periodSelect.value,
+                day: getDayName(),
+                date: getDateStr(),
+                reason: reason,
+                deductVal: deductVal
+            });
+            saveBehaviorLog(log);
+
+            behaviorModal.classList.add('hidden');
+            behaviorModal.classList.remove('flex');
+            alert(`تم خصم ${deductVal} نجمة من رصيد (${studentToDeduct}) وتوثيق المخالفة.`);
+        };
+
+        document.getElementById('print-behavior-btn').onclick = () => {
+            const log = getBehaviorLog().filter(item => item.className === currentClass);
+            if (log.length === 0) {
+                alert(`لا توجد مخالفات سلوكية مسجلة على طلاب صف (${currentClass}) حالياً.`);
+                return;
+            }
+
+            const studentIncidents = {};
+            log.forEach(item => {
+                if (!studentIncidents[item.studentName]) {
+                    studentIncidents[item.studentName] = [];
+                }
+                studentIncidents[item.studentName].push(item);
+            });
+
+            const printContainer = document.getElementById('print-behavior-area');
+            printContainer.innerHTML = '';
+
+            Object.keys(studentIncidents).forEach(stName => {
+                const incidents = studentIncidents[stName];
+                const page = document.createElement('div');
+                page.className = 'single-student-notice';
+
+                let rowsHtml = '';
+                incidents.forEach((inc, idx) => {
+                    rowsHtml += `
+                        <tr>
+                            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                            <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.day} (${inc.date})</td>
+                            <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.period}</td>
+                            <td style="border: 1px solid #333; padding: 6px; font-weight: bold; color: #b91c1c;">${inc.reason}</td>
+                            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold; color: #b45309;">-⭐ ${inc.deductVal}</td>
+                        </tr>
+                    `;
+                });
+
+                page.innerHTML = `
+                    <div>
+                        <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+                            <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
+                        </div>
+
+                        <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 15px;">
+                            <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">إشعار متابعة انضباط سلوكي صفي</h2>
+                            <p style="font-size: 13px; font-weight: bold; color: #475569; margin: 4px 0 0 0;">قسم العلوم - مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p>
+                        </div>
+
+                        <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.8;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 15px;">${stName}</span></span>
+                                <span>الصف: <span style="color: #1e3a8a;">${currentClass}</span></span>
+                            </div>
+                            <p style="margin: 0; font-size: 13px; font-weight: normal; color: #334155;">
+                                المكرم ولي أمر الطالب المحترم،،، تحية طيبة وبعد، نحرص في قسم العلوم على توفير بيئة تعليمية هادئة ومثمرة لأبنائنا الطلاب، ونحيطكم علماً بأن الطالب قد رُصدت عليه الملاحظات السلوكية التالية أثناء الحصص الدراسية:
+                            </p>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+                            <thead>
+                                <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
+                                    <th style="border: 1px solid #333; padding: 6px; width: 40px; text-align: center;">#</th>
+                                    <th style="border: 1px solid #333; padding: 6px; width: 140px; text-align: center;">اليوم والتاريخ</th>
+                                    <th style="border: 1px solid #333; padding: 6px; width: 90px; text-align: center;">الحصة</th>
+                                    <th style="border: 1px solid #333; padding: 6px; text-align: right;">نوع الملاحظة / السلوك المرصود</th>
+                                    <th style="border: 1px solid #333; padding: 6px; width: 90px; text-align: center;">النجوم المخصومة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top: 15px; padding: 8px; border: 1px dashed #64748b; border-radius: 6px; font-size: 12px; color: #334155; text-align: center;">
+                            نرجو من سيادتكم التفضل بالتوجيه والمتابعة مع ابننا الطالب لتلافي تكرار هذه السلوكيات والارتقاء بمستواه وتحصيله الصفي.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 15px;">
+                        <div style="text-align: center;">
+                            <div>معلم المادة</div>
+                            <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>توقيع ولي الأمر بالعلم</div>
+                            <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 140px;"></div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>مدير المدرسة</div>
+                            <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                        </div>
+                    </div>
+                `;
+                printContainer.appendChild(page);
+            });
+
+            const originalTitle = document.title;
+            document.title = `إشعارات_مخالفات_${currentClass}_${getDateStr()}`;
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => { document.title = originalTitle; }, 1000);
+            }, 100);
+        };
+
+        async function syncFromGoogleSheets() {
+            const syncBtn = document.getElementById('cloud-sync-btn');
+            syncBtn.innerHTML = '⏳ جاري المزامنة...';
+            syncBtn.disabled = true;
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' });
+                const cloudRows = await response.json();
+
+                if (Array.isArray(cloudRows) && cloudRows.length > 0) {
+                    const sessionMap = {};
+                    cloudRows.forEach(row => {
+                        const parsedDate = parseStandardDate(row.date);
+                        const safeDateStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`;
+                        
+                        const key = `${String(row.className).trim()}_${String(row.period).trim()}_${safeDateStr}`;
+                        if (!sessionMap[key]) {
+                            sessionMap[key] = {
+                                id: Date.now() + Math.floor(Math.random() * 10000),
+                                timestamp: parsedDate.toISOString(),
+                                day: row.day,
+                                date: safeDateStr,
+                                className: String(row.className).trim(),
+                                period: String(row.period).trim(),
+                                records: []
+                            };
+                        }
+                        sessionMap[key].records.push({ 
+                            name: String(row.studentName).trim(), 
+                            stars: Number(row.stars) || 0 
+                        });
+                    });
+
+                    const reconstructedHistory = Object.values(sessionMap).reverse();
+                    saveArchiveHistory(reconstructedHistory);
+                    renderSessionsList();
+                    if (typeof renderSummaryReport === 'function') renderSummaryReport();
+
+                    alert(`تمت المزامنة بنجاح! تم استدعاء ${reconstructedHistory.length} حصة من Google Sheets.`);
+                } else {
+                    alert('تم الاتصال بالشيت بنجاح ولكن لم يتم العثور على سجلات مسجلة.');
+                }
+            } catch(err) {
+                alert('تعذر استدعاء البيانات من الشيت. تأكد من أن الرابط منتهي بـ /exec ومتاح للجميع (Anyone).');
+            } finally {
+                syncBtn.innerHTML = '🔄 تحديث من الشيت';
+                syncBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('cloud-sync-btn').onclick = syncFromGoogleSheets;
+
+        function exportToExcel(filename, data, sheetName = "المشاركات") {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            XLSX.writeFile(wb, `${filename}.xlsx`);
+        }
+
+        function exportSessionExcel(session) {
+            const safeDate = session.date.replace(/[\/\\]/g, '-');
+            const fileName = `مشاركات_علوم_${session.className}_${session.period}_${session.day}_${safeDate}`;
+            const rows = session.records.map((r, i) => ({
+                "م": i + 1,
+                "اسم الطالب": r.name,
+                "النجوم": r.stars,
+                "الصف": session.className,
+                "الحصة": session.period,
+                "اليوم": session.day,
+                "التاريخ": session.date
+            }));
+            exportToExcel(fileName, rows);
+        }
+
+        function triggerFastPdfDownload(cls, day, date, period, records, isSummary = false) {
+            document.getElementById('p-class').textContent = `الصف: ${cls}`;
+            document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
+            document.getElementById('p-date').textContent = isSummary ? `تاريخ التقرير: ${date}` : `التاريخ: ${date}`;
+            document.getElementById('p-period').textContent = isSummary ? `النوع: تجميعي` : `الحصة: ${period}`;
+
+            document.getElementById('print-main-title').textContent = isSummary 
+                ? `تقرير التميز والمشاركات التجميعي - قسم العلوم` 
+                : `سجل مشاركات وتميز الطلاب في مادة العلوم`;
+
+            const thExtra = document.getElementById('th-extra-col');
+            const thStars = document.getElementById('th-stars-col');
+            thStars.textContent = isSummary ? 'مجموع النجوم' : 'نقاط المشاركة';
+            thExtra.style.display = isSummary ? 'table-cell' : 'none';
 
             const tbody = document.getElementById('print-rows');
             tbody.innerHTML = '';
 
             records.sort((a, b) => b.stars - a.stars);
             records.forEach((r, idx) => {
-                let starDisplay = '';
-                for (let s = 0; s < r.stars; s++) starDisplay += '⭐';
-
                 tbody.innerHTML += `
                     <tr>
-                        <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
-                        <td style="font-weight: bold; padding-right: 12px;">${r.name}</td>
-                        <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 15px;">${starDisplay} (${r.stars})</td>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold;">${r.name}</td>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
+                        ${isSummary ? `<td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
                     </tr>
                 `;
             });
 
-            window.print();
+            const cleanDate = date.replace(/[\/\\]/g, '-');
+            const fileName = isSummary 
+                ? `تجميع_مشاركات_${cls}_${day}_${cleanDate}.pdf`
+                : `مشاركات_${cls}_${period}_${day}_${cleanDate}.pdf`;
+
+            const element = document.getElementById('print-sheet');
+            const opt = {
+                margin:       8,
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
         }
 
         document.getElementById('print-current-btn').onclick = () => {
-            const all = studentDatabase[currentClass] || [];
+            const all = studentDatabase[currentClass] || [];[cite: 1]
             const participants = all
-                .map(name => ({ name, stars: classStars[name] || 0 }))
-                .filter(p => p.stars > 0);
+                .map(name => ({ name, stars: classStars[name] || 0 }))[cite: 1]
+                .filter(p => p.stars > 0);[cite: 1]
 
             if (participants.length === 0) {
-                alert('لا توجد نجوم مشاركة مسجلة لطباعتها.');
-                return;
+                alert('لا توجد نجوم مشاركة مسجلة لتحميلها.');[cite: 1]
+                return;[cite: 1]
             }
 
-            triggerOfficialPrint(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
+            triggerFastPdfDownload(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
         };
 
-        document.getElementById('reset-session-btn').onclick = () => {
-            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية؟`)) {
-                classStars = {};
-                localStorage.removeItem(`widget_session_${currentClass}`);
-                loadClassData();
-                targetStudentName.textContent = 'تم التصفير';
-                quickStars.classList.add('opacity-40', 'pointer-events-none');
-            }
+        const historyModal = document.getElementById('history-modal');[cite: 1]
+        const historyList = document.getElementById('history-sessions-list');[cite: 1]
+        const tabSessionsBtn = document.getElementById('tab-sessions-btn');
+        const tabSummaryBtn = document.getElementById('tab-summary-btn');
+        const tabSessionsContent = document.getElementById('tab-sessions-content');
+        const tabSummaryContent = document.getElementById('tab-summary-content');
+        const summaryClassSelect = document.getElementById('summary-class-select');
+        const summaryRangeSelect = document.getElementById('summary-range-select');
+        const summaryTableBody = document.getElementById('summary-table-body');
+        const summaryCountInfo = document.getElementById('summary-count-info');
+
+        tabSessionsBtn.onclick = () => {
+            tabSessionsBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";
+            tabSummaryBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white";
+            tabSessionsContent.classList.remove('hidden');
+            tabSummaryContent.classList.add('hidden');
+            renderSessionsList();
         };
 
-        // إدارة السجل المحفوظ والتعديل
-        const historyModal = document.getElementById('history-modal');
-        const historyList = document.getElementById('history-sessions-list');
-        const editSessionModal = document.getElementById('edit-session-modal');
-        const editStudentsList = document.getElementById('edit-students-list');
-        const addStudentSelect = document.getElementById('add-student-to-session-select');
+        tabSummaryBtn.onclick = () => {
+            tabSummaryBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";
+            tabSessionsBtn.className = "px-3 py-1 rounded-lg text-xs font-black bg-slate-700 text-slate-300 hover:text-white";
+            tabSummaryContent.classList.remove('hidden');
+            tabSessionsContent.classList.add('hidden');
+            renderSummaryReport();
+        };
 
-        function renderHistoryList() {
-            const history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
-            historyList.innerHTML = '';
+        function renderSessionsList() {
+            const history = getArchiveHistory();
+            historyList.innerHTML = '';[cite: 1]
             if (history.length === 0) {
-                historyList.innerHTML = '<p class="text-center text-slate-400 py-4">لا توجد حصص سابقة محفوظة بالسجل.</p>';
+                historyList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد حصص مسجلة، اضغط على (تحديث من الشيت) أو (إضافة حصة ورقية).</p>';
                 return;
             }
 
-            history.forEach((session, idx) => {
-                const item = document.createElement('div');
-                item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex justify-between items-center';
+            history.forEach(session => {
+                const item = document.createElement('div');[cite: 1]
+                item.className = 'p-2.5 rounded-xl bg-slate-700/60 border border-slate-600 flex flex-col gap-2 font-bold';
                 item.innerHTML = `
-                    <div>
-                        <div class="font-bold text-sky-400">${session.className} - ${session.period}</div>
-                        <div class="text-[10px] text-slate-300">${session.day} (${session.date}) | ${session.records.length} طالب</div>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <button class="edit-btn px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-xs">
-                            ✏️ تعديل
-                        </button>
-                        <button class="reprint-btn px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs">
-                            🖨️ طباعة
-                        </button>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-black text-sky-400">${session.className} - ${session.period}</div>
+                            <div class="text-[11px] text-slate-300">${session.day} (${session.date}) | ${session.records.length} طالب</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 font-bold">
+                            <button class="edit-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs">✏️ تعديل</button>
+                            <button class="excel-btn px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل</button>
+                            <button class="reprint-btn px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">📄 تحميل PDF</button>
+                        </div>
                     </div>
                 `;
 
+                item.querySelector('.edit-btn').onclick = () => openEditSessionModal(session.id);
+                item.querySelector('.excel-btn').onclick = () => exportSessionExcel(session);
                 item.querySelector('.reprint-btn').onclick = () => {
-                    triggerOfficialPrint(session.className, session.day, session.date, session.period, session.records);
+                    triggerFastPdfDownload(session.className, session.day, session.date, session.period, session.records);
                 };
-
-                item.querySelector('.edit-btn').onclick = () => {
-                    openEditSessionModal(idx);
-                };
-
-                historyList.appendChild(item);
+                historyList.appendChild(item);[cite: 1]
             });
         }
 
-        function openEditSessionModal(index) {
-            const history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
-            const session = history[index];
+        document.getElementById('history-modal-btn').onclick = () => {
+            renderSessionsList();
+            historyModal.classList.remove('hidden');[cite: 1]
+            historyModal.classList.add('flex');[cite: 1]
+        };
+
+        document.getElementById('close-history-modal').onclick = () => {
+            historyModal.classList.add('hidden');[cite: 1]
+            historyModal.classList.remove('flex');[cite: 1]
+        };
+
+        const manualModal = document.getElementById('manual-session-modal');
+        const manualClassSelect = document.getElementById('manual-class-select');
+        const manualDateInput = document.getElementById('manual-date-input');
+        const manualPeriodSelect = document.getElementById('manual-period-select');
+        const manualStudentsList = document.getElementById('manual-students-list');
+
+        document.getElementById('open-manual-modal-btn').onclick = () => {
+            manualSessionStars = {};
+            manualDateInput.value = getDateStr();
+            renderManualStudents();
+            manualModal.classList.remove('hidden');
+            manualModal.classList.add('flex');
+        };
+
+        document.getElementById('close-manual-modal').onclick = () => {
+            manualModal.classList.add('hidden');
+            manualModal.classList.remove('flex');
+        };
+
+        function renderManualStudents() {
+            manualStudentsList.innerHTML = '';
+            const cls = manualClassSelect.value;
+            const students = studentDatabase[cls] || [];[cite: 1]
+
+            students.forEach((name, idx) => {
+                const stars = manualSessionStars[name] || 0;
+                const row = document.createElement('div');
+                row.className = `p-2 rounded-xl flex items-center justify-between text-xs font-bold border transition ${stars > 0 ? 'bg-amber-500/15 border-amber-500' : 'bg-slate-750 border-slate-600'}`;
+                row.innerHTML = `
+                    <span class="text-slate-100 font-bold">${idx + 1}. ${name}</span>
+                    <div class="flex items-center gap-1.5">
+                        <button class="m-minus px-2 py-0.5 bg-red-600 hover:bg-red-500 rounded text-white font-black">-⭐</button>
+                        <span class="m-val text-amber-400 font-black min-w-[32px] text-center">${stars > 0 ? '⭐ ' + stars : '0'}</span>
+                        <button class="m-plus px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-black">+⭐</button>
+                    </div>
+                `;
+
+                row.querySelector('.m-plus').onclick = () => {
+                    manualSessionStars[name] = (manualSessionStars[name] || 0) + 1;
+                    renderManualStudents();
+                };
+
+                row.querySelector('.m-minus').onclick = () => {
+                    if (manualSessionStars[name] > 1) {
+                        manualSessionStars[name]--;
+                    } else {
+                        delete manualSessionStars[name];
+                    }
+                    renderManualStudents();
+                };
+
+                manualStudentsList.appendChild(row);
+            });
+        }
+
+        manualClassSelect.onchange = () => {
+            manualSessionStars = {};
+            renderManualStudents();
+        };
+
+        document.getElementById('save-manual-session-btn').onclick = async () => {
+            const cls = manualClassSelect.value;
+            const dateVal = manualDateInput.value;
+            const period = manualPeriodSelect.value;
+
+            if (!dateVal) {
+                alert('يرجى تحديد تاريخ الحصة.');
+                return;
+            }
+
+            const participants = Object.keys(manualSessionStars).map(name => ({
+                name: name,
+                stars: manualSessionStars[name]
+            })).filter(p => p.stars > 0);
+
+            if (participants.length === 0) {
+                alert('يرجى رصد نجمة واحدة على الأقل لطالب.');
+                return;
+            }
+
+            const parsedDate = parseStandardDate(dateVal);
+            const dayName = getDayName(parsedDate);
+
+            archiveSessionLocally(participants, cls, period, dateVal, dayName);
+
+            const btn = document.getElementById('save-manual-session-btn');
+            btn.innerHTML = '⏳ جاري الحفظ...';
+            btn.disabled = true;
+
+            const payload = {
+                action: "append",
+                records: participants.map(p => ({
+                    day: dayName,
+                    date: dateVal,
+                    className: cls,
+                    period: period,
+                    studentName: p.name,
+                    stars: p.stars
+                }))
+            };
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                alert('تم حفظ الحصة وتخزينها بنجاح في Google Sheets!');
+            } catch(e) {
+                alert('تم حفظ الحصة محلياً بنجاح.');
+            } finally {
+                btn.innerHTML = '💾 حفظ الحصة وإرسالها للشيت';
+                btn.disabled = false;
+                manualModal.classList.add('hidden');
+                manualModal.classList.remove('flex');
+                renderSessionsList();
+                if (!tabSummaryContent.classList.contains('hidden')) renderSummaryReport();
+            }
+        };
+
+        const editModal = document.getElementById('edit-session-modal');
+        const editRecordsList = document.getElementById('edit-records-list');
+        const editAddSelect = document.getElementById('edit-add-student-select');
+
+        function openEditSessionModal(sessionId) {
+            const history = getArchiveHistory();
+            const session = history.find(s => s.id === sessionId);
             if (!session) return;
 
-            editingSessionIndex = index;
-            tempEditingRecords = JSON.parse(JSON.stringify(session.records || []));
+            sessionBeingEdited = JSON.parse(JSON.stringify(session));
+            editingSessionId = sessionId;
 
-            document.getElementById('edit-modal-title').textContent = `تعديل حصة: ${session.className} - ${session.period}`;
+            document.getElementById('edit-session-subtitle').textContent = 
+                `${sessionBeingEdited.className} - ${sessionBeingEdited.period} - ${sessionBeingEdited.day} (${sessionBeingEdited.date})`;
 
-            // تجهيز قائمة الطلاب لإضافتهم إذا لم يكونوا مسجلين
-            const classStudents = studentDatabase[session.className] || [];
-            addStudentSelect.innerHTML = '';
-            classStudents.forEach(name => {
+            editAddSelect.innerHTML = '';
+            const allStudents = studentDatabase[sessionBeingEdited.className] || [];[cite: 1]
+            allStudents.forEach(st => {
                 const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                addStudentSelect.appendChild(opt);
+                opt.value = st;
+                opt.textContent = st;
+                editAddSelect.appendChild(opt);
             });
 
             renderEditRecords();
-            editSessionModal.classList.remove('hidden');
-            editSessionModal.classList.add('flex');
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
         }
 
         function renderEditRecords() {
-            editStudentsList.innerHTML = '';
-            if (tempEditingRecords.length === 0) {
-                editStudentsList.innerHTML = '<p class="text-center text-slate-400 py-3">لا يوجد طلاب في هذه الحصة حالياً.</p>';
+            editRecordsList.innerHTML = '';
+            if (sessionBeingEdited.records.length === 0) {
+                editRecordsList.innerHTML = '<div class="text-center text-slate-400 py-3 font-bold">لا يوجد طلاب مسجلين في هذا الكشف.</div>';
                 return;
             }
 
-            tempEditingRecords.forEach((item, rIdx) => {
+            sessionBeingEdited.records.forEach((r, idx) => {
                 const row = document.createElement('div');
-                row.className = 'p-2 rounded-lg bg-slate-700/80 border border-slate-600 flex justify-between items-center';
+                row.className = 'p-2 rounded-xl bg-slate-700/80 border border-slate-600 flex items-center justify-between text-xs font-bold';
                 row.innerHTML = `
-                    <span class="font-bold text-slate-200">${item.name}</span>
-                    <div class="flex items-center gap-2">
-                        <button class="dec-btn w-6 h-6 rounded bg-slate-600 text-amber-400 font-bold">-</button>
-                        <span class="font-bold text-amber-400 w-6 text-center">⭐ ${item.stars}</span>
-                        <button class="inc-btn w-6 h-6 rounded bg-slate-600 text-amber-400 font-bold">+</button>
-                        <button class="del-btn text-red-400 hover:text-red-300 font-bold mr-1">✕</button>
+                    <span class="text-slate-100">${r.name}</span>
+                    <div class="flex items-center gap-1.5">
+                        <button class="minus-btn px-2 py-0.5 bg-red-600/80 hover:bg-red-500 rounded font-black text-white">-⭐</button>
+                        <span class="font-black text-amber-400 px-1 min-w-[32px] text-center">⭐ ${r.stars}</span>
+                        <button class="plus-btn px-2 py-0.5 bg-emerald-600/80 hover:bg-emerald-500 rounded font-black text-white">+⭐</button>
+                        <button class="del-btn text-red-400 hover:text-red-300 font-bold px-1.5" title="حذف من الكشف">🗑️</button>
                     </div>
                 `;
 
-                row.querySelector('.inc-btn').onclick = () => {
-                    item.stars++;
-                    renderEditRecords();
-                };
-
-                row.querySelector('.dec-btn').onclick = () => {
-                    if (item.stars > 1) {
-                        item.stars--;
+                row.querySelector('.minus-btn').onclick = () => {
+                    if (r.stars > 1) {
+                        r.stars--;
                     } else {
-                        tempEditingRecords.splice(rIdx, 1);
+                        sessionBeingEdited.records.splice(idx, 1);
                     }
                     renderEditRecords();
                 };
 
-                row.querySelector('.del-btn').onclick = () => {
-                    tempEditingRecords.splice(rIdx, 1);
+                row.querySelector('.plus-btn').onclick = () => {
+                    r.stars++;
                     renderEditRecords();
                 };
 
-                editStudentsList.appendChild(row);
+                row.querySelector('.del-btn').onclick = () => {
+                    sessionBeingEdited.records.splice(idx, 1);
+                    renderEditRecords();
+                };
+
+                editRecordsList.appendChild(row);
             });
         }
 
-        document.getElementById('add-student-to-session-btn').onclick = () => {
-            const studentName = addStudentSelect.value;
-            if (!studentName) return;
-            const existing = tempEditingRecords.find(r => r.name === studentName);
+        document.getElementById('edit-add-student-btn').onclick = () => {
+            const stName = editAddSelect.value;
+            if (!stName) return;
+
+            const existing = sessionBeingEdited.records.find(r => r.name === stName);
             if (existing) {
                 existing.stars++;
             } else {
-                tempEditingRecords.push({ name: studentName, stars: 1 });
+                sessionBeingEdited.records.push({ name: stName, stars: 1 });
             }
             renderEditRecords();
         };
 
-        document.getElementById('save-edited-session-btn').onclick = () => {
-            if (editingSessionIndex === null) return;
-            let history = JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
-            if (!history[editingSessionIndex]) return;
+        document.getElementById('save-edited-session-btn').onclick = async () => {
+            let history = getArchiveHistory();
+            const index = history.findIndex(s => s.id === editingSessionId);
+            if (index !== -1) {
+                history[index] = sessionBeingEdited;
+                saveArchiveHistory(history);
 
-            history[editingSessionIndex].records = tempEditingRecords;
-            localStorage.setItem('sessions_archive_history', JSON.stringify(history));
+                const btn = document.getElementById('save-edited-session-btn');
+                btn.innerHTML = '⏳ جاري تحديث الشيت السحابي...';
+                btn.disabled = true;
 
-            editSessionModal.classList.add('hidden');
-            editSessionModal.classList.remove('flex');
-            renderHistoryList();
-            alert('تم حفظ تعديلات الحصة بنجاح!');
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: "updateSession",
+                            day: sessionBeingEdited.day,
+                            date: sessionBeingEdited.date,
+                            className: sessionBeingEdited.className,
+                            period: sessionBeingEdited.period,
+                            records: sessionBeingEdited.records
+                        })
+                    });
+                    alert('تم حفظ التعديلات وتحديث الشيت بنجاح!');
+                } catch(e) {
+                    alert('تم الحفظ محلياً.');
+                } finally {
+                    btn.innerHTML = '💾 حفظ التغييرات وتحديث الشيت محلياً وسحابياً';
+                    btn.disabled = false;
+                    editModal.classList.add('hidden');
+                    editModal.classList.remove('flex');
+                    renderSessionsList();
+                    if (!tabSummaryContent.classList.contains('hidden')) renderSummaryReport();
+                }
+            }
         };
 
         document.getElementById('close-edit-modal').onclick = () => {
-            editSessionModal.classList.add('hidden');
-            editSessionModal.classList.remove('flex');
+            editModal.classList.add('hidden');
+            editModal.classList.remove('flex');
         };
 
-        document.getElementById('cancel-edit-btn').onclick = () => {
-            editSessionModal.classList.add('hidden');
-            editSessionModal.classList.remove('flex');
+        function getAggregatedData(targetClass, rangeType) {
+            const history = getArchiveHistory();
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            const filteredSessions = history.filter(session => {
+                if (session.className !== targetClass) return false;
+                if (rangeType === 'all') return true;
+
+                const sessionDate = session.timestamp ? new Date(session.timestamp) : parseStandardDate(session.date);
+                if (rangeType === 'week') return sessionDate >= startOfWeek;
+                if (rangeType === 'month') return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            const studentMap = {};
+            filteredSessions.forEach(session => {
+                session.records.forEach(r => {
+                    if (!studentMap[r.name]) {
+                        studentMap[r.name] = { name: r.name, stars: 0, sessionsCount: 0 };
+                    }
+                    studentMap[r.name].stars += r.stars;
+                    studentMap[r.name].sessionsCount += 1;
+                });
+            });
+
+            return Object.values(studentMap).sort((a, b) => b.stars - a.stars);
+        }
+
+        function renderSummaryReport() {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+
+            summaryCountInfo.textContent = `إجمالي المتميزين: ${data.length} طالب`;
+            summaryTableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                summaryTableBody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 font-bold">لا توجد مشاركات مسجلة لهذا الصف خلال هذه الفترة.</td></tr>`;
+                return;
+            }
+
+            data.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 text-center font-black">${idx + 1}</td>
+                    <td class="p-2 font-black text-sky-300 text-sm">${st.name}</td>
+                    <td class="p-2 text-center font-black text-amber-400 text-sm">⭐ ${st.stars}</td>
+                    <td class="p-2 text-center font-bold text-slate-300">${st.sessionsCount}</td>
+                `;
+                summaryTableBody.appendChild(tr);
+            });
+        }
+
+        summaryClassSelect.onchange = renderSummaryReport;
+        summaryRangeSelect.onchange = renderSummaryReport;
+
+        document.getElementById('export-summary-excel-btn').onclick = () => {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+            if (data.length === 0) {
+                alert('لا توجد بيانات لتصديرها.');
+                return;
+            }
+
+            const rangeText = range === 'week' ? 'أسبوعي' : (range === 'month' ? 'شهري' : 'شامل');
+            const safeDate = getDateStr().replace(/[\/\\]/g, '-');
+            const fileName = `تجميع_مشاركات_${cls}_${rangeText}_${getDayName()}_${safeDate}`;
+
+            const rows = data.map((d, i) => ({
+                "م": i + 1,
+                "اسم الطالب": d.name,
+                "الصف": cls,
+                "مجموع النجوم": d.stars,
+                "عدد الحصص المشارك بها": d.sessionsCount,
+                "نوع التقرير": rangeText,
+                "تاريخ الاستخراج": getDateStr()
+            }));
+
+            exportToExcel(fileName, rows, `تجميع_${rangeText}`);
         };
 
-        document.getElementById('history-modal-btn').onclick = () => {
-            renderHistoryList();
-            historyModal.classList.remove('hidden');
-            historyModal.classList.add('flex');
-        };
-
-        document.getElementById('close-history-modal').onclick = () => {
-            historyModal.classList.add('hidden');
-            historyModal.classList.remove('flex');
+        document.getElementById('print-summary-btn').onclick = () => {
+            const cls = summaryClassSelect.value;
+            const range = summaryRangeSelect.value;
+            const data = getAggregatedData(cls, range);
+            if (data.length === 0) {
+                alert('لا توجد بيانات لتحميلها.');
+                return;
+            }
+            const rangeText = range === 'week' ? 'التقرير الأسبوعي' : (range === 'month' ? 'التقرير الشهري' : 'السجل الشامل');
+            triggerFastPdfDownload(cls, rangeText, getDateStr(), 'تجميعي', data, true);
         };
 
         classSelect.onchange = (e) => {
-            currentClass = e.target.value;
-            activeStudent = null;
-            targetStudentName.textContent = 'اضغط للبدء';
-            quickStars.classList.add('opacity-40', 'pointer-events-none');
-            loadClassData();
+            currentClass = e.target.value;[cite: 1]
+            summaryClassSelect.value = currentClass;
+            manualClassSelect.value = currentClass;
+            activeStudent = null;[cite: 1]
+            targetStudentName.textContent = 'اضغط للبدء';[cite: 1]
+            targetStudentStars.classList.add('hidden');
+            quickStars.classList.add('opacity-40', 'pointer-events-none');[cite: 1]
+            loadClassData();[cite: 1]
         };
 
         themeBtn.onclick = () => {
-            document.body.classList.toggle('light-mode');
-            themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+            document.body.classList.toggle('light-mode');[cite: 1]
+            themeBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';[cite: 1]
         };
 
         window.addEventListener('DOMContentLoaded', () => {
             Object.keys(studentDatabase).forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = `الصف: ${c}`;
-                classSelect.appendChild(opt);
+                const opt1 = document.createElement('option');[cite: 1]
+                opt1.value = c;[cite: 1]
+                opt1.textContent = `الصف: ${c}`;[cite: 1]
+                classSelect.appendChild(opt1);[cite: 1]
+
+                const opt2 = document.createElement('option');
+                opt2.value = c;
+                opt2.textContent = `الصف: ${c}`;
+                summaryClassSelect.appendChild(opt2);
+
+                const opt3 = document.createElement('option');
+                opt3.value = c;
+                opt3.textContent = `الصف: ${c}`;
+                manualClassSelect.appendChild(opt3);
             });
 
-            const currentAutoPeriod = calculatePeriod();
-            for (let i = 0; i < periodSelect.options.length; i++) {
-                if (periodSelect.options[i].value === currentAutoPeriod) {
-                    periodSelect.selectedIndex = i;
-                    break;
+            manualDateInput.value = getDateStr();
+
+            const currentAutoPeriod = calculatePeriod();[cite: 1]
+            for (let i = 0; i < periodSelect.options.length; i++) {[cite: 1]
+                if (periodSelect.options[i].value === currentAutoPeriod) {[cite: 1]
+                    periodSelect.selectedIndex = i;[cite: 1]
+                    break;[cite: 1]
                 }
             }
 
-            loadClassData();
-            spinMainBtn.onclick = executeQuickSpin;
+            loadClassData();[cite: 1]
+            spinMainBtn.onclick = executeQuickSpin;[cite: 1]
         });
     </script>
 </body>
