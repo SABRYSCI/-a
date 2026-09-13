@@ -156,7 +156,7 @@
                 margin: 0.8cm;
             }
             body { background: white !important; color: black !important; }
-            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal, #behavior-modal { display: none !important; }
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal, #behavior-modal, #review-behavior-modal { display: none !important; }
             .print-area { display: block !important; }
             .single-student-notice {
                 page-break-after: always !important;
@@ -259,7 +259,7 @@
                 </button>
             </div>
             <div class="flex justify-between items-center px-1 text-[10px] text-slate-400 font-bold">
-                <button id="print-behavior-btn" class="text-amber-400 hover:underline">📋 إشعارات المخالفات المجمعة</button>
+                <button id="print-behavior-btn" class="text-amber-400 hover:underline">📋 إشعارات المخالفات</button>
                 <button id="reset-session-btn" class="hover:text-red-400 transition">تصفير الحصة الحالية</button>
             </div>
         </footer>
@@ -301,6 +301,38 @@
             <button id="confirm-deduct-btn" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow mt-1">
                 تأكيد الخصم وتوثيق المخالفة في سجل الطالب
             </button>
+        </div>
+    </div>
+
+    <!-- نافذة استعراض وتحديد المخالفات القائمة قبل الطباعة -->
+    <div id="review-behavior-modal" class="fixed inset-0 bg-black/90 z-[10009] hidden items-center justify-center p-3">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[92vh] shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
+                <div>
+                    <h3 class="font-bold text-amber-400 text-sm">استعراض وتحديد مخالفات الطالب للطباعة</h3>
+                    <p id="review-student-info" class="text-xs text-sky-300 font-bold mt-0.5"></p>
+                </div>
+                <button id="close-review-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
+            </div>
+
+            <div class="flex justify-between items-center bg-slate-900/60 p-2 rounded-xl text-xs font-bold text-slate-300 mb-1 border border-slate-700">
+                <span>حدد فقط المخالفات <span class="text-red-400 font-black">القائمة والمستمرة</span> للطباعة:</span>
+                <div class="flex gap-2">
+                    <button id="select-all-review-btn" class="text-sky-400 hover:underline">تحديد الكل</button>
+                    <span>|</span>
+                    <button id="deselect-all-review-btn" class="text-slate-400 hover:underline">إلغاء التحديد</button>
+                </div>
+            </div>
+
+            <!-- قائمة المخالفات مع مربعات التحديد -->
+            <div id="review-incidents-list" class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs my-2"></div>
+
+            <div class="border-t border-slate-700 pt-2.5 flex justify-between items-center">
+                <span class="text-[11px] text-slate-400 font-bold">المخالفات غير المحددة تظل محفوظة في السجل ولا تظهر في الورقة.</span>
+                <button id="confirm-print-selected-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow flex items-center gap-1">
+                    🖨️ طباعة المخالفات المحددة
+                </button>
+            </div>
         </div>
     </div>
 
@@ -371,11 +403,10 @@
                 </div>
             </div>
 
-            <!-- تبويب 3: إدارة وطباعة المخالفات التراكمية لكل طالب -->
+            <!-- تبويب 3: إدارة واستعراض المخالفات التراكمية -->
             <div id="tab-behavior-content" class="hidden flex-grow overflow-y-auto space-y-2 pr-1 text-xs">
                 <div class="flex justify-between items-center bg-slate-900/60 p-2 rounded-xl border border-slate-700 mb-2">
-                    <span class="text-[11px] text-slate-300 font-bold">الطلاب الذين عليهم مخالفات تراكمية في (<span id="behavior-tab-class" class="text-amber-400">6ب1</span>):</span>
-                    <button id="print-all-behavior-btn" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs">🖨️ طباعة الكل (لكل ولي أمر ورقة)</button>
+                    <span class="text-[11px] text-slate-300 font-bold">الطلاب الذين عليهم مخالفات مسجلة في (<span id="behavior-tab-class" class="text-amber-400">6ب1</span>):</span>
                 </div>
                 <div id="behavior-students-summary-list" class="space-y-1.5"></div>
             </div>
@@ -505,7 +536,7 @@
         </div>
     </div>
 
-    <!-- منطقة طباعة المخالفات السلوكية الفردية والمجمعة -->
+    <!-- مساحة طباعة الإشعارات الرسمية للمخالفات -->
     <div class="print-area" id="print-behavior-area"></div>
 
     <script>
@@ -591,6 +622,7 @@
         let editingSessionId = null;
         let manualSessionStars = {};
         let studentToDeduct = null;
+        let reviewingStudentName = null;
 
         const audioSynth = new Tone.Synth({
             oscillator: { type: "sine" },
@@ -1007,128 +1039,184 @@
             alert(`تم توثيق المخالفة في السجل التراكمي للطالب (${studentToDeduct}).`);
         };
 
-        // دالة إنشاء وطباعة إشعار المخالفات التراكمي للطالب أو لمجموعة طلاب
-        function generateBehaviorNoticesHtml(targetStudent = null) {
-            const log = getBehaviorLog().filter(item => item.className === currentClass);
+        // نافذة استعراض وتحديد المخالفات للطالب قبل الطباعة
+        const reviewModal = document.getElementById('review-behavior-modal');
+        const reviewStudentInfo = document.getElementById('review-student-info');
+        const reviewIncidentsList = document.getElementById('review-incidents-list');
+
+        function openReviewBehaviorModal(stName) {
+            reviewingStudentName = stName;
+            reviewStudentInfo.textContent = `الطالب: ${stName} | الصف: ${currentClass}`;
+            
+            const log = getBehaviorLog().filter(item => item.className === currentClass && item.studentName === stName);
+            log.sort((a, b) => a.id - b.id);
+
+            reviewIncidentsList.innerHTML = '';
             if (log.length === 0) {
-                alert(`لا توجد مخالفات مسجلة على طلاب صف (${currentClass}).`);
-                return false;
+                reviewIncidentsList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد مخالفات لهذا الطالب.</p>';
+                return;
             }
 
-            const studentIncidents = {};
-            log.forEach(item => {
-                if (targetStudent && item.studentName !== targetStudent) return;
-                if (!studentIncidents[item.studentName]) {
-                    studentIncidents[item.studentName] = [];
-                }
-                studentIncidents[item.studentName].push(item);
+            log.forEach((item, idx) => {
+                const row = document.createElement('label');
+                row.className = 'p-2 rounded-xl bg-slate-700/60 border border-slate-600 flex items-center justify-between cursor-pointer hover:border-red-400 transition';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <input type="checkbox" class="review-check w-4 h-4 text-red-600 rounded bg-slate-900 border-slate-500 focus:ring-0 cursor-pointer" data-id="${item.id}" checked>
+                        <div>
+                            <div class="font-bold text-slate-200 text-xs">${idx + 1}. ${item.reason}</div>
+                            <div class="text-[10px] text-slate-400 font-semibold">${item.day} (${item.date}) - ${item.period}</div>
+                        </div>
+                    </div>
+                    <span class="status-badge px-2 py-0.5 rounded text-[10px] font-black bg-red-950 text-red-400 border border-red-800">قائمة (للطباعة)</span>
+                `;
+
+                const chk = row.querySelector('.review-check');
+                const badge = row.querySelector('.status-badge');
+                chk.onchange = () => {
+                    if (chk.checked) {
+                        badge.textContent = "قائمة (للطباعة)";
+                        badge.className = "status-badge px-2 py-0.5 rounded text-[10px] font-black bg-red-950 text-red-400 border border-red-800";
+                    } else {
+                        badge.textContent = "عُدلت (في السجل فقط)";
+                        badge.className = "status-badge px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 text-slate-400 border border-slate-600";
+                    }
+                };
+
+                reviewIncidentsList.appendChild(row);
             });
 
-            if (Object.keys(studentIncidents).length === 0) {
-                alert(`لا توجد مخالفات مسجلة لهذا الطالب.`);
-                return false;
+            reviewModal.classList.remove('hidden');
+            reviewModal.classList.add('flex');
+        }
+
+        document.getElementById('close-review-modal').onclick = () => {
+            reviewModal.classList.add('hidden');
+            reviewModal.classList.remove('flex');
+        };
+
+        document.getElementById('select-all-review-btn').onclick = () => {
+            document.querySelectorAll('.review-check').forEach(chk => {
+                chk.checked = true;
+                chk.dispatchEvent(new Event('change'));
+            });
+        };
+
+        document.getElementById('deselect-all-review-btn').onclick = () => {
+            document.querySelectorAll('.review-check').forEach(chk => {
+                chk.checked = false;
+                chk.dispatchEvent(new Event('change'));
+            });
+        };
+
+        document.getElementById('confirm-print-selected-btn').onclick = () => {
+            if (!reviewingStudentName) return;
+            const checkedIds = Array.from(document.querySelectorAll('.review-check:checked')).map(c => Number(c.dataset.id));
+            if (checkedIds.length === 0) {
+                alert('يرجى تحديد مخالفة واحدة على الأقل لطباعتها في التقرير.');
+                return;
             }
 
+            const allLog = getBehaviorLog().filter(item => item.className === currentClass && item.studentName === reviewingStudentName);
+            const selectedIncidents = allLog.filter(item => checkedIds.includes(item.id));
+
+            reviewModal.classList.add('hidden');
+            reviewModal.classList.remove('flex');
+            generateSpecificStudentReport(reviewingStudentName, selectedIncidents);
+        };
+
+        // توليد تقرير الطباعة الرسمي بالمخالفات المحددة فقط
+        function generateSpecificStudentReport(stName, incidents) {
+            incidents.sort((a, b) => a.id - b.id);
             const printContainer = document.getElementById('print-behavior-area');
             printContainer.innerHTML = '';
 
-            Object.keys(studentIncidents).forEach(stName => {
-                const incidents = studentIncidents[stName];
-                // ترتيب المخالفات تصاعدياً حسب تاريخ حدوثها
-                incidents.sort((a, b) => a.id - b.id);
+            const page = document.createElement('div');
+            page.className = 'single-student-notice';
 
-                const page = document.createElement('div');
-                page.className = 'single-student-notice';
-
-                let rowsHtml = '';
-                incidents.forEach((inc, idx) => {
-                    rowsHtml += `
-                        <tr>
-                            <td style="border: 1px solid #333; padding: 7px; text-align: center; font-weight: bold;">${idx + 1}</td>
-                            <td style="border: 1px solid #333; padding: 7px; text-align: center;">${inc.day} (${inc.date})</td>
-                            <td style="border: 1px solid #333; padding: 7px; text-align: center;">${inc.period}</td>
-                            <td style="border: 1px solid #333; padding: 7px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
-                        </tr>
-                    `;
-                });
-
-                const countText = incidents.length > 1 ? `(تكررت المخالفات بعدد: ${incidents.length} مرات)` : `(المرة الأولى)`;
-
-                page.innerHTML = `
-                    <div>
-                        <div style="width: 100%; text-align: center; margin-bottom: 12px;">
-                            <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
-                        </div>
-
-                        <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
-                            <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">تقرير متابعة وضبط السلوك الصفي التراكمي</h2>
-                            <p style="font-size: 13px; font-weight: bold; color: #475569; margin: 3px 0 0 0;">قسم العلوم - مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p>
-                        </div>
-
-                        <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.7;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 16px;">${stName}</span></span>
-                                <span>الصف: <span style="color: #1e3a8a;">${currentClass}</span></span>
-                                <span style="color: #b91c1c;">${countText}</span>
-                            </div>
-                            <p style="margin: 0; font-size: 13px; font-weight: normal; color: #334155; text-align: justify;">
-                                المكرم ولي أمر الطالب / المشرف الإداري المحترم، نحيطكم علماً بأنه قد تم رصد المخالفات السلوكية التالية على الطالب أثناء حصص العلوم بشكل تراكمي، والتي <strong>تؤثر سلباً وبشكل مباشر على درجات التقويم الصفي ودرجات السلوك والمواظبة</strong>:
-                            </p>
-                        </div>
-
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px;">
-                            <thead>
-                                <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
-                                    <th style="border: 1px solid #333; padding: 7px; width: 45px; text-align: center;">#</th>
-                                    <th style="border: 1px solid #333; padding: 7px; width: 160px; text-align: center;">اليوم والتاريخ</th>
-                                    <th style="border: 1px solid #333; padding: 7px; width: 110px; text-align: center;">الحصة</th>
-                                    <th style="border: 1px solid #333; padding: 7px; text-align: right;">المخالفة أو السلوك المرصود</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rowsHtml}
-                            </tbody>
-                        </table>
-
-                        <div style="margin-top: 15px; padding: 10px; border: 1.5px dashed #b91c1c; border-radius: 6px; font-size: 12.5px; font-weight: bold; color: #991b1b; text-align: center; background-color: #fff1f2;">
-                            تنبيه: تكرار السلوك وعدم التجاوب يستدعي استدعاء ولي الأمر واتخاذ الإجراءات الإدارية المعتمدة في لائحة الانضباط المدرسي.
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 10px;">
-                        <div style="text-align: center;">
-                            <div>معلم المادة</div>
-                            <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div>المشرف الإداري</div>
-                            <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 130px;"></div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div>توقيع ولي الأمر بالعلم</div>
-                            <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 130px;"></div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div>مدير المدرسة</div>
-                            <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
-                        </div>
-                    </div>
+            let rowsHtml = '';
+            incidents.forEach((inc, idx) => {
+                rowsHtml += `
+                    <tr>
+                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${inc.day} (${inc.date})</td>
+                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${inc.period}</td>
+                        <td style="border: 1px solid #333; padding: 8px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
+                    </tr>
                 `;
-                printContainer.appendChild(page);
             });
 
+            const countText = incidents.length > 1 ? `(المخالفات المستمرة: ${incidents.length})` : `(مخالفة سلوكية)`;
+
+            page.innerHTML = `
+                <div>
+                    <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+                        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
+                    </div>
+
+                    <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
+                        <h2 style="font-size: 21px; font-weight: 900; margin: 0; color: #991b1b;">إشعار متابعة انضباط وتقويم سلوكي صفي</h2>
+                        <p style="font-size: 13px; font-weight: bold; color: #475569; margin: 3px 0 0 0;">قسم العلوم - مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p>
+                    </div>
+
+                    <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.7;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 16px;">${stName}</span></span>
+                            <span>الصف: <span style="color: #1e3a8a;">${currentClass}</span></span>
+                            <span style="color: #b91c1c;">${countText}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 13px; font-weight: normal; color: #334155; text-align: justify;">
+                            المكرم ولي أمر الطالب / المشرف الإداري المحترم، نحيطكم علماً بأنه قد تم رصد المخالفات السلوكية التالية على الطالب أثناء حصص العلوم، والتي <strong>تؤثر سلباً وبشكل مباشر على درجات التقويم الصفي ودرجات السلوك والمواظبة للطالب</strong>:
+                        </p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px;">
+                        <thead>
+                            <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
+                                <th style="border: 1px solid #333; padding: 8px; width: 45px; text-align: center;">#</th>
+                                <th style="border: 1px solid #333; padding: 8px; width: 160px; text-align: center;">اليوم والتاريخ</th>
+                                <th style="border: 1px solid #333; padding: 8px; width: 110px; text-align: center;">الحصة</th>
+                                <th style="border: 1px solid #333; padding: 8px; text-align: right;">نوع المخالفة السلوكية المرصودة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 15px; padding: 10px; border: 1.5px dashed #b91c1c; border-radius: 6px; font-size: 12.5px; font-weight: bold; color: #991b1b; text-align: center; background-color: #fff1f2;">
+                        تنبيه هام: تكرار هذه المخالفات يؤدي إلى خصم درجات السلوك المعتمدة في الشهادة، نرجو منكم الجلوس مع الطالب والتنبيه عليه بضرورة الالتزام التام داخل الحصة.
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 10px;">
+                    <div style="text-align: center;">
+                        <div>معلم المادة</div>
+                        <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div>المشرف الإداري</div>
+                        <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 130px;"></div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div>توقيع ولي الأمر بالعلم والمتابعة</div>
+                        <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 150px;"></div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div>مدير المدرسة</div>
+                        <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                    </div>
+                </div>
+            `;
+            printContainer.appendChild(page);
+
             const originalTitle = document.title;
-            document.title = targetStudent ? `تقرير_مخالفات_${targetStudent}_${getDateStr()}` : `مخالفات_مجمعة_${currentClass}_${getDateStr()}`;
+            document.title = `تقرير_مخالفات_${stName}_${getDateStr()}`;
             setTimeout(() => {
                 window.print();
                 setTimeout(() => { document.title = originalTitle; }, 1000);
             }, 100);
-            return true;
         }
-
-        document.getElementById('print-behavior-btn').onclick = () => {
-            generateBehaviorNoticesHtml();
-        };
 
         // تبويبات نافذة السجل
         const tabSessionsBtn = document.getElementById('tab-sessions-btn');
@@ -1165,20 +1253,22 @@
                 card.innerHTML = `
                     <div>
                         <div class="font-black text-sky-300 text-xs">${idx + 1}. ${stName}</div>
-                        <div class="text-[10px] text-red-400 font-bold mt-0.5">عدد المخالفات التراكمية: (${items.length})</div>
+                        <div class="text-[10px] text-red-400 font-bold mt-0.5">إجمالي المخالفات في السجل: (${items.length})</div>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <button class="print-single-btn px-2 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs">🖨️ طباعة تقرير الطالب</button>
+                        <button class="review-btn px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs flex items-center gap-1">
+                            <span>🔍 استعراض وتحديد للطباعة</span>
+                        </button>
                         <button class="clear-single-btn px-2 py-1 bg-slate-800 hover:bg-slate-900 text-slate-300 rounded-lg text-xs" title="حذف المخالفات للطالب">🗑️</button>
                     </div>
                 `;
 
-                card.querySelector('.print-single-btn').onclick = () => {
-                    generateBehaviorNoticesHtml(stName);
+                card.querySelector('.review-btn').onclick = () => {
+                    openReviewBehaviorModal(stName);
                 };
 
                 card.querySelector('.clear-single-btn').onclick = () => {
-                    if (confirm(`هل أنت متأكد من مسح مخالفات الطالب (${stName})؟`)) {
+                    if (confirm(`هل أنت متأكد من مسح مخالفات الطالب (${stName}) نهائياً من السجل؟`)) {
                         let allLog = getBehaviorLog();
                         allLog = allLog.filter(x => !(x.className === currentClass && x.studentName === stName));
                         saveBehaviorLog(allLog);
@@ -1220,8 +1310,9 @@
             renderBehaviorTab();
         };
 
-        document.getElementById('print-all-behavior-btn').onclick = () => {
-            generateBehaviorNoticesHtml();
+        document.getElementById('print-behavior-btn').onclick = () => {
+            document.getElementById('history-modal-btn').click();
+            tabBehaviorBtn.click();
         };
 
         async function syncFromGoogleSheets() {
