@@ -259,7 +259,7 @@
                 </button>
             </div>
             <div class="flex justify-between items-center px-1 text-[10px] text-slate-400 font-bold">
-                <button id="print-behavior-btn" class="text-amber-400 hover:underline">📋 إشعارات المخالفات</button>
+                <button id="print-behavior-btn" class="text-amber-400 hover:underline">📋 كشف وإشعارات المخالفات</button>
                 <button id="reset-session-btn" class="hover:text-red-400 transition">تصفير الحصة الحالية</button>
             </div>
         </footer>
@@ -304,7 +304,7 @@
         </div>
     </div>
 
-    <!-- نافذة استعراض وتحديد المخالفات القائمة قبل الطباعة -->
+    <!-- نافذة استعراض وتحديد المخالفات القائمة قبل الطباعة الفردية -->
     <div id="review-behavior-modal" class="fixed inset-0 bg-black/90 z-[10009] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[92vh] shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
@@ -324,13 +324,12 @@
                 </div>
             </div>
 
-            <!-- قائمة المخالفات مع مربعات التحديد -->
             <div id="review-incidents-list" class="flex-grow overflow-y-auto space-y-1.5 pr-1 text-xs my-2"></div>
 
             <div class="border-t border-slate-700 pt-2.5 flex justify-between items-center">
-                <span class="text-[11px] text-slate-400 font-bold">المخالفات غير المحددة تظل محفوظة في السجل ولا تظهر في الورقة.</span>
+                <span class="text-[11px] text-slate-400 font-bold">المخالفات غير المحددة تظل محفوظة في السجل التراكمي.</span>
                 <button id="confirm-print-selected-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow flex items-center gap-1">
-                    🖨️ طباعة المخالفات المحددة
+                    🖨️ طباعة المخالفات المحددة فقط
                 </button>
             </div>
         </div>
@@ -403,12 +402,38 @@
                 </div>
             </div>
 
-            <!-- تبويب 3: إدارة واستعراض المخالفات التراكمية -->
+            <!-- تبويب 3: سجل المخالفات المجمع والمفلتر -->
             <div id="tab-behavior-content" class="hidden flex-grow overflow-y-auto space-y-2 pr-1 text-xs">
-                <div class="flex justify-between items-center bg-slate-900/60 p-2 rounded-xl border border-slate-700 mb-2">
-                    <span class="text-[11px] text-slate-300 font-bold">الطلاب الذين عليهم مخالفات مسجلة في (<span id="behavior-tab-class" class="text-amber-400">6ب1</span>):</span>
+                <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-700 font-bold">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">الصف:</label>
+                        <select id="behavior-filter-class" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none">
+                            <option value="6ب1">الصف: 6ب1</option>
+                            <option value="2ع1">الصف: 2ع1</option>
+                            <option value="2ع2">الصف: 2ع2</option>
+                            <option value="2ع3">الصف: 2ع3</option>
+                            <option value="2ع4">الصف: 2ع4</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">الفترة الزمنية:</label>
+                        <select id="behavior-filter-range" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-1.5 text-xs text-sky-400 font-bold outline-none">
+                            <option value="day">اليوم فقط</option>
+                            <option value="week" selected>خلال الأسبوع الحالي</option>
+                            <option value="month">خلال الشهر الحالي</option>
+                            <option value="all">كل المخالفات التراكمية</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="behavior-students-summary-list" class="space-y-1.5"></div>
+
+                <div class="flex justify-between items-center px-1">
+                    <span id="behavior-stats-info" class="text-xs font-bold text-slate-300">إجمالي المخالفات: 0</span>
+                    <button id="print-aggregated-behavior-btn" class="px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow">
+                        🖨️ طباعة كشف المخالفات المجمع
+                    </button>
+                </div>
+
+                <div id="behavior-students-summary-list" class="space-y-2"></div>
             </div>
         </div>
     </div>
@@ -544,64 +569,64 @@
 
         const studentDatabase = {
             "6ب1": [
-                "ابراهيم على خليل الحايكي", "السيد حسن صالح الموسوي", "السيد هاشم مجيد فيصل محمد",
-                "إيليا سعيد حسن حسن", "حسن عقيل حسن البني", "حسن على ميرزا خليل",
-                "حسین اسامه عبد الجليل الجشي", "حسين عمار جاسم الاسكافي", "حيدر على ابراهيم حسن",
-                "سيد صادق جعفر على ناصر", "سيد حامد حسین محمد درویش", "صادق على عبدالله اسماعيل",
-                "عبد العزيز جلال عبد العزيز حاجی عبدالله", "عبدالله حسین عبدالله مال الله", "عبدالله على عباس شاهين",
-                "على حسين على عبد على", "على عيسى ابراهيم الستراوي", "على قاسم عباس حسن",
-                "عمار محمد عبد الامير الحصار", "غسان مهند عقيل مرهون", "قاسم محمد احمد حسن",
-                "ليث محمود مسعود الوطني", "محمد صالح شوقي البناء", "محمد عباس خميس السودان",
-                "مهدي جواد احمد مليح", "نوح زهير عبد الوهاب غزوان", "يوسف كاظم محمد الحايكي"
+                "ابراهيم علي خليل الحايكي", "السيد حسن صالح الموسوي", "السيد علوي ابراهيم ناصر حسن",
+                "السيد هاشم مجيد فيصل محمد", "إيليا سعيد حسن حسن", "حسن علي ميرزا خليل",
+                "حسين اسامه عبدالجليل الجشي", "حسين عمار جاسم الاسكافي", "حيدر علي ابراهيم حسن",
+                "سيد صادق جعفر علي ناصر", "سيدحامد حسين محمد درويش", "صادق علي عبدالله اسماعيل",
+                "عبدالعزيز جلال عبدالعزيز حاجي عبدالله", "عبدالله حسين عبدالله مال الله", "عبدالله علي عباس شاهين",
+                "علي حسين علي عبدعلي", "علي عيسى ابراهيم الستراوي", "علي قاسم عباس حسن",
+                "عمار محمد عبدالامير الحصار", "غسان مهند عقيل مرهون", "قاسم جابر جاسم منصور",
+                "قاسم محمد احمد حسن", "ليث محمود مسعود الوطني", "محمد صالح شوقي البناء",
+                "محمد عباس خميس السودان", "نوح زهير عبدالوهاب غزوان", "يوسف كاظم محمد الحايكي"
             ],
             "2ع1": [
-                "أحمد على حبيب كاظم", "أحمد محمد ميرزا التيتون", "إدريس عبدالعزيز احمد عبدالنبي",
+                "أحمد علي حبيب كاظم", "أحمد محمد ميرزا التيتون", "إدريس عبدالعزيز احمد عبدالنبي",
                 "آدم فاضل عباس حسين", "آدم نوح محمد المشخص", "السيد جعفر ضياء عدنان عبدالصمد",
-                "السيد حسين ميثم سعيد ماجد", "السيد صادق جعفر علوي العلوي", "السيد محمد حسين حمزه على",
-                "السيد هاشم رائد حميد على", "جاسم محمد جواد مکی", "حسن على محسن التيتون",
-                "حسين شريف اسماعيل اسماعيل", "حسين عبدالنبي ناصر دبی", "حسين عقيل عباس زبيل",
-                "حسين على عبدالحسين حسن", "حسين محمد حبيب غريب", "حيدر سعيد رضى النجاس",
-                "رضا موسى جعفر مرهون", "صادق جعفر عبد الوهاب البصري", "صلاح عقيل عباس موسى",
-                "عادل محمد عادل الترنج", "عباس عبدالله ابراهيم ال عميري", "على فيصل مختار محمد",
-                "على محمود على الصفار", "علي يوسف سلمان الصفار", "محمد باقر حسن محمد باقر نعمه",
-                "محمد حسن عيسى أحمد على", "محمد حسين جعفر مال الله", "منتظر حسن صالح الصيرفي"
+                "السيد حسين ميثم سعيد ماجد", "السيد صادق جعفر علوي العلوي", "السيد محمد حسين حمزه علي",
+                "جاسم محمد جواد مكي", "حسن جعفر حسن حسن", "حسن علي محسن التيتون",
+                "حسين شريف اسماعيل اسماعيل", "حسين عبدالنبي ناصر دبي", "حسين عقيل عباس زبيل",
+                "حسين علي عبدالحسين حسن", "حسين محمد حبيب غريب", "حيدر سعيد رضي النجاس",
+                "رضا موسى جعفر مرهون", "صادق جعفر عبدالوهاب البصري", "عادل محمد عادل الترنج",
+                "عباس عبدالله ابراهيم ال عميرى", "علي فيصل مختار محمد", "علي محمود علي الصفار",
+                "علي هلال علي هلال", "علي يوسف سلمان الصفار", "محمد باقر حسن محمد باقر نعمه",
+                "محمد حسن عيسى أحمد علي", "محمد حسين جعفر مال الله", "منتظر حسن صالح الصيرفي"
             ],
             "2ع2": [
-                "احمد باسم ابراهيم الخنيزي", "السيدحيدر فيصل علوي ناصر", "إلياس بن شاكر بن على البراهيم",
-                "امير محمد عبد الامير رضی", "بدر طاهر عبدالرسول جديد", "حسن محمد حسن عيسى",
-                "حسن محمود منصور عبد على", "حسين حسن على الحمار", "حسين محمد جعفر حسن",
-                "حيدر احمد عبدالرسول بن الشيخ", "حيدر رائد معتوق حمود", "حيدر على ميرزا الصفار",
-                "راشد يوسف احمد يحيى", "سجاد حسين محسن عاشور", "سجاد زهير حسن عبد الرسول",
+                "احمد باسم ابراهيم الخنيزي", "السيدحيدر فيصل علوي ناصر", "إلياس بن شاكر بن علي البراهيم",
+                "أمير محمد عبدالامير رضي", "بدر طاهر عبدالرسول جديد", "حسن محمد حسن عيسى",
+                "حسن محمود منصور عبدعلي", "حسين حسن علي محمد", "حسين محمد جعفر حسن",
+                "حيدر احمد عبدالرسول بن الشيخ", "حيدر رائد معتوق حمود", "حيدر علي ميرزا الصفار",
+                "راشد يوسف احمد يحيى", "سجاد حسين محسن عاشور", "سجاد زهير حسن عبدالرسول",
                 "عبدالكريم محمود عبدالكريم ابراهيم", "عبدالله محمد جعفر سهوان", "عبدالله محمد عبدالله الغيص",
-                "على حسين احمد عزيز", "على حسين ميرزا ال عبدالحي", "على حمد احمد على",
-                "على مصطفى على العلى", "فيصل احمد عباس زبيل", "محسن ابراهيم محسن عبد الرسول",
+                "علي حسين احمد عزيز", "علي حسين ميرزا ال عبدالحي", "علي حمد احمد علي",
+                "علي مصطفى علي العلي", "فيصل احمد عباس زبيل", "محسن ابراهيم محسن عبدالرسول",
                 "محمد جلال عيسى نعمه", "محمد صادق احمد مشيمع", "محمد نادر ميرزا العرادي",
-                "مصطفى احمد محمد الاسكافي", "هيثم فاضل ابراهيم اسماعيل", "يوسف ابراهيم على الصفار"
+                "مصطفى احمد محمد الاسكافي", "هيثم فاضل ابراهيم اسماعيل", "يوسف ابراهيم علي الصفار"
             ],
             "2ع3": [
-                "السيد حسن ابراهيم محمد علوي", "السيد عباس حسين ناصر شرف", "السيد عباس فاضل على الموسوي",
-                "السيد على حسين نزار علوى", "السيدحيدر على مهدي يوسف", "ايمن جاسم احمد نصيف",
-                "حسن جعفر حسن حسن", "حسن على حسن عبد الوهاب", "حسين رضي على الصفار",
-                "حسين على عبدالحسين الصفار", "حيدر محمد موسى طاهر", "سلمان ابراهيم عبدالله عبدالله",
-                "سيدرضا السيد حسين عيسى", "طه جعفر حسن عيسى", "عبدالله منصور عبدالله شعبان",
-                "على حسن على مهدي", "على حسين عباس موسى", "على محمد احمد المغلق",
-                "على محمد على امان", "عماد ايمن احمد المديفع", "عيسى عبد الهادي عبد الجليل على",
-                "عيسى على عيسى النكاس", "كريم فائق عبد الكريم على", "مجتبى مرتضى ميرزا السطيح",
+                "السيد حسن ابراهيم محمد علوي", "السيد عباس حسين ناصر شرف", "السيد عباس فاضل علي الموسوي",
+                "السيد علي حسين نزار علوي", "السيدحيدر علي مهدي يوسف", "أيمن جاسم احمد نصيف",
+                "حسن علي حسن عبدالوهاب", "حسين رضي علي الصفار", "حسين علي عبدالحسين الصفار",
+                "حيدر محمد موسى طاهر", "سلمان ابراهيم عبدالله عبدالله", "سيدرضا السيد حسين عيسى",
+                "صلاح عقيل عباس موسى", "طه جعفر حسن عيسى", "عبدالله منصور عبدالله شعبان",
+                "علي حسن علي مهدي", "علي حسين عباس موسى", "علي محمد احمد المغلق",
+                "علي محمد علي امان", "عماد ايمن احمد المديفع", "عيسى عبدالهادي عبدالجليل علي",
+                "عيسى علي عيسى النكاس", "كريم فائق عبدالكريم علي", "مجتبى مرتضى ميرزا السطيح",
                 "محمد حسن عبدالله امان", "محمد خالد احمد علي", "محمد عباس عبدالله مرهون",
-                "محمد على ابراهيم محمد على ال مرهون", "مهدي حسين اكبر محسن", "يوسف زهير عبد الوهاب غزوان"
+                "محمد علي ابراهيم محمد علي ال مرهون", "مهدي حسين اكبر محسن", "يوسف زهير عبدالوهاب غزوان"
             ],
             "2ع4": [
-                "السيد حسين ماجد اسماعيل ناصر", "السيد على احمد عدنان البلادي", "السيد محسن ياسر عبدالله ناصر",
-                "السيد محمد على حمزه عبدالله", "جعفر صادق حسن الصفار", "جواد عبدالمجيد حسن راشد",
-                "حسن هاني ابراهيم حسن", "حسين محمد يعقوب الكليب", "خليل ابراهيم خليل الحايكي",
-                "سلمان حبيب سلمان الحواج", "سلمان حسين سلمان العالي", "عباس محمد حسن الشيخ على",
-                "عباس هاني عباس شاوش", "على حسن احمد الشيوخ", "على حسن على حبيب",
-                "على حسين عيسى الزامل", "على حسين عيسى خميس", "على عقيل جمعه جمعه",
-                "علي هادي حسين سلمان علي", "على هلال على هلال", "عمار ياسر ابراهيم ناصر",
-                "فاضل عباس جعفر المحسن", "قاسم حسن منصور القيدوم", "محمد عبدالله احمد البقالي",
-                "محمد على شاكر عبدالله خميس", "محمد هشام ايوب سوار", "محمد يونس خليل محمد",
-                "محمود ياسر محمد على", "مصطفى محمود عبدالله السابوري", "مهدي احمد عبد الرسول احمد على",
-                "مهدي عبد الحسين ميرزا على", "مهدي محمد مهدي عبدالله"
+                "السيد حسين ماجد اسماعيل ناصر", "السيد علي احمد عدنان البلادي", "السيد محسن ياسر عبدالله ناصر",
+                "السيد محمد علي حمزه عبدالله", "السيد هاشم رائد حميد علي", "جعفر صادق حسن الصفار",
+                "جواد عبدالمجيد حسن راشد", "حسن هاني ابراهيم حسن", "حسين محمد يعقوب الكليب",
+                "خليل ابراهيم خليل الحايكي", "سلمان حبيب سلمان الحواج", "سلمان حسين سلمان العالي",
+                "عباس محمد حسن الشيخ علي", "عباس هاني عباس شاوش", "علي حسن احمد الشيوخ",
+                "علي حسن علي حبيب", "علي حسين عيسى الزامل", "علي حسين عيسى خميس",
+                "علي عقيل جمعه جمعه", "علي محمود جليل طاهر", "علي هادي حسين سلمان علي",
+                "عمار ياسر ابراهيم ناصر", "فاضل عباس جعفر المحسن", "قاسم حسن منصور القيدوم",
+                "محمد عبدالله احمد البقالي", "محمد علي شاكر عبدالله خميس", "محمد هشام ايوب سوار",
+                "محمد يونس خليل محمد", "محمود ياسر محمد علي", "مصطفى محمود عبدالله السابوري",
+                "مهدي احمد عبدالرسول احمد علي", "مهدي عبدالحسين ميرزا علي", "مهدي محمد مهدي عبدالله"
             ]
         };
 
@@ -1039,16 +1064,16 @@
             alert(`تم توثيق المخالفة في السجل التراكمي للطالب (${studentToDeduct}).`);
         };
 
-        // نافذة استعراض وتحديد المخالفات للطالب قبل الطباعة
+        // نافذة استعراض وتحديد المخالفات للطالب قبل الطباعة الفردية
         const reviewModal = document.getElementById('review-behavior-modal');
         const reviewStudentInfo = document.getElementById('review-student-info');
         const reviewIncidentsList = document.getElementById('review-incidents-list');
 
         function openReviewBehaviorModal(stName) {
             reviewingStudentName = stName;
-            reviewStudentInfo.textContent = `الطالب: ${stName} | الصف: ${currentClass}`;
+            reviewStudentInfo.textContent = `الطالب: ${stName} | الصف: ${behaviorFilterClass.value}`;
             
-            const log = getBehaviorLog().filter(item => item.className === currentClass && item.studentName === stName);
+            const log = getBehaviorLog().filter(item => item.className === behaviorFilterClass.value && item.studentName === stName);
             log.sort((a, b) => a.id - b.id);
 
             reviewIncidentsList.innerHTML = '';
@@ -1117,7 +1142,7 @@
                 return;
             }
 
-            const allLog = getBehaviorLog().filter(item => item.className === currentClass && item.studentName === reviewingStudentName);
+            const allLog = getBehaviorLog().filter(item => item.className === behaviorFilterClass.value && item.studentName === reviewingStudentName);
             const selectedIncidents = allLog.filter(item => checkedIds.includes(item.id));
 
             reviewModal.classList.add('hidden');
@@ -1125,7 +1150,7 @@
             generateSpecificStudentReport(reviewingStudentName, selectedIncidents);
         };
 
-        // توليد تقرير الطباعة الرسمي بالمخالفات المحددة فقط
+        // توليد تقرير الطباعة الفردي الرسمي للطالب
         function generateSpecificStudentReport(stName, incidents) {
             incidents.sort((a, b) => a.id - b.id);
             const printContainer = document.getElementById('print-behavior-area');
@@ -1162,7 +1187,7 @@
                     <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.7;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                             <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 16px;">${stName}</span></span>
-                            <span>الصف: <span style="color: #1e3a8a;">${currentClass}</span></span>
+                            <span>الصف: <span style="color: #1e3a8a;">${behaviorFilterClass.value}</span></span>
                             <span style="color: #b91c1c;">${countText}</span>
                         </div>
                         <p style="margin: 0; font-size: 13px; font-weight: normal; color: #334155; text-align: justify;">
@@ -1225,21 +1250,48 @@
         const tabSessionsContent = document.getElementById('tab-sessions-content');
         const tabSummaryContent = document.getElementById('tab-summary-content');
         const tabBehaviorContent = document.getElementById('tab-behavior-content');
+        const behaviorFilterClass = document.getElementById('behavior-filter-class');
+        const behaviorFilterRange = document.getElementById('behavior-filter-range');
         const behaviorStudentsSummaryList = document.getElementById('behavior-students-summary-list');
-        const behaviorTabClass = document.getElementById('behavior-tab-class');
+        const behaviorStatsInfo = document.getElementById('behavior-stats-info');
+
+        function getFilteredIncidents() {
+            const cls = behaviorFilterClass.value;
+            const range = behaviorFilterRange.value;
+            const log = getBehaviorLog().filter(item => item.className === cls);
+            const now = new Date();
+            const todayStr = getDateStr();
+
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            return log.filter(item => {
+                if (range === 'all') return true;
+                const itemDate = parseStandardDate(item.date);
+                if (range === 'day') {
+                    return item.date === todayStr || parseStandardDate(item.date).toDateString() === now.toDateString();
+                } else if (range === 'week') {
+                    return itemDate >= startOfWeek;
+                } else if (range === 'month') {
+                    return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+                }
+                return true;
+            });
+        }
 
         function renderBehaviorTab() {
-            behaviorTabClass.textContent = currentClass;
-            const log = getBehaviorLog().filter(item => item.className === currentClass);
+            const filtered = getFilteredIncidents();
+            behaviorStatsInfo.textContent = `إجمالي المخالفات المرصودة: ${filtered.length}`;
             behaviorStudentsSummaryList.innerHTML = '';
 
-            if (log.length === 0) {
-                behaviorStudentsSummaryList.innerHTML = '<p class="text-center text-slate-400 py-4 font-bold">لا توجد مخالفات مسجلة على طلاب هذا الصف حتى الآن.</p>';
+            if (filtered.length === 0) {
+                behaviorStudentsSummaryList.innerHTML = '<p class="text-center text-slate-400 py-6 font-bold">لا توجد مخالفات مسجلة لهذا الصف خلال هذه الفترة المحددة.</p>';
                 return;
             }
 
             const studentMap = {};
-            log.forEach(item => {
+            filtered.forEach(item => {
                 if (!studentMap[item.studentName]) {
                     studentMap[item.studentName] = [];
                 }
@@ -1249,17 +1301,33 @@
             Object.keys(studentMap).forEach((stName, idx) => {
                 const items = studentMap[stName];
                 const card = document.createElement('div');
-                card.className = 'p-2.5 rounded-xl bg-slate-700/70 border border-slate-600 flex justify-between items-center';
+                card.className = 'p-2.5 rounded-xl bg-slate-700/70 border border-slate-600 flex flex-col gap-2';
+                
+                let detailsListHtml = '';
+                items.forEach(inc => {
+                    detailsListHtml += `
+                        <div class="flex justify-between items-center text-[11px] bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-700">
+                            <span class="text-red-300 font-bold">• ${inc.reason}</span>
+                            <span class="text-slate-400 text-[10px]">${inc.day} (${inc.date}) - ${inc.period}</span>
+                        </div>
+                    `;
+                });
+
                 card.innerHTML = `
-                    <div>
-                        <div class="font-black text-sky-300 text-xs">${idx + 1}. ${stName}</div>
-                        <div class="text-[10px] text-red-400 font-bold mt-0.5">إجمالي المخالفات في السجل: (${items.length})</div>
+                    <div class="flex justify-between items-center border-b border-slate-600 pb-1.5">
+                        <div>
+                            <span class="font-black text-sky-300 text-xs">${idx + 1}. ${stName}</span>
+                            <span class="text-[10px] text-red-400 font-bold mr-2">(${items.length} مخالفات)</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button class="review-btn px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-[11px] flex items-center gap-1">
+                                <span>🔍 تحديد وطباعة إشعار الطالب</span>
+                            </button>
+                            <button class="clear-single-btn px-2 py-1 bg-slate-800 hover:bg-slate-900 text-slate-400 rounded-lg text-[11px]" title="مسح مخالفات الطالب من السجل">🗑️</button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <button class="review-btn px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs flex items-center gap-1">
-                            <span>🔍 استعراض وتحديد للطباعة</span>
-                        </button>
-                        <button class="clear-single-btn px-2 py-1 bg-slate-800 hover:bg-slate-900 text-slate-300 rounded-lg text-xs" title="حذف المخالفات للطالب">🗑️</button>
+                    <div class="space-y-1">
+                        ${detailsListHtml}
                     </div>
                 `;
 
@@ -1270,7 +1338,7 @@
                 card.querySelector('.clear-single-btn').onclick = () => {
                     if (confirm(`هل أنت متأكد من مسح مخالفات الطالب (${stName}) نهائياً من السجل؟`)) {
                         let allLog = getBehaviorLog();
-                        allLog = allLog.filter(x => !(x.className === currentClass && x.studentName === stName));
+                        allLog = allLog.filter(x => !(x.className === behaviorFilterClass.value && x.studentName === stName));
                         saveBehaviorLog(allLog);
                         renderBehaviorTab();
                     }
@@ -1279,6 +1347,93 @@
                 behaviorStudentsSummaryList.appendChild(card);
             });
         }
+
+        behaviorFilterClass.onchange = renderBehaviorTab;
+        behaviorFilterRange.onchange = renderBehaviorTab;
+
+        // طباعة كشف المخالفات المجمع للصف بالكامل
+        document.getElementById('print-aggregated-behavior-btn').onclick = () => {
+            const cls = behaviorFilterClass.value;
+            const range = behaviorFilterRange.value;
+            const filtered = getFilteredIncidents();
+
+            if (filtered.length === 0) {
+                alert('لا توجد مخالفات في هذه الفترة لطباعة كشف مجمع.');
+                return;
+            }
+
+            const rangeText = range === 'day' ? 'كشف يومي' : (range === 'week' ? 'كشف أسبوعي' : (range === 'month' ? 'كشف شهري' : 'سجل شامل'));
+            const printContainer = document.getElementById('print-behavior-area');
+            printContainer.innerHTML = '';
+
+            let rowsHtml = '';
+            filtered.forEach((inc, idx) => {
+                rowsHtml += `
+                    <tr>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold; color: #1e3a8a;">${inc.studentName}</td>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.day} (${inc.date})</td>
+                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.period}</td>
+                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
+                    </tr>
+                `;
+            });
+
+            printContainer.innerHTML = `
+                <div>
+                    <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+                        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
+                    </div>
+
+                    <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
+                        <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">كشف المخالفات السلوكية الصفي المجمع</h2>
+                        <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 6px; color: #333;">
+                            <span>الصف: ${cls}</span>
+                            <span>الفترة: ${rangeText}</span>
+                            <span>تاريخ التقرير: ${getDateStr()}</span>
+                            <span>إجمالي المخالفات: ${filtered.length}</span>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+                        <thead>
+                            <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
+                                <th style="border: 1px solid #333; padding: 6px; width: 40px; text-align: center;">#</th>
+                                <th style="border: 1px solid #333; padding: 6px; text-align: right; width: 170px;">اسم الطالب</th>
+                                <th style="border: 1px solid #333; padding: 6px; text-align: center; width: 140px;">اليوم والتاريخ</th>
+                                <th style="border: 1px solid #333; padding: 6px; text-align: center; width: 90px;">الحصة</th>
+                                <th style="border: 1px solid #333; padding: 6px; text-align: right;">نوع المخالفة المرصودة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 15px;">
+                        <div style="text-align: center;">
+                            <div>معلم المادة</div>
+                            <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>المشرف الإداري</div>
+                            <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 140px;"></div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>مدير المدرسة</div>
+                            <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const originalTitle = document.title;
+            document.title = `كشف_مخالفات_مجمع_${cls}_${rangeText}_${getDateStr()}`;
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => { document.title = originalTitle; }, 1000);
+            }, 100);
+        };
 
         tabSessionsBtn.onclick = () => {
             tabSessionsBtn.className = "px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";
@@ -1307,6 +1462,7 @@
             tabBehaviorContent.classList.remove('hidden');
             tabSessionsContent.classList.add('hidden');
             tabSummaryContent.classList.add('hidden');
+            behaviorFilterClass.value = currentClass;
             renderBehaviorTab();
         };
 
@@ -1854,6 +2010,7 @@
             currentClass = e.target.value;
             summaryClassSelect.value = currentClass;
             manualClassSelect.value = currentClass;
+            behaviorFilterClass.value = currentClass;
             activeStudent = null;
             targetStudentName.textContent = 'اضغط للبدء';
             targetStudentStars.classList.add('hidden');
@@ -1871,6 +2028,7 @@
             currentClass = classSelect.value || '6ب1';
             summaryClassSelect.value = currentClass;
             manualClassSelect.value = currentClass;
+            behaviorFilterClass.value = currentClass;
 
             manualDateInput.value = getDateStr();
 
