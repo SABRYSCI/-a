@@ -519,16 +519,16 @@
         </div>
     </div>
 
-    <!-- حاوية الـ PDF للمشاركات -->
-    <div style="position: absolute; left: -9999px; top: -9999px;">
-        <div id="print-sheet">
-            <div style="width: 100%; text-align: center; margin-bottom: 12px;">
-                <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 140px; object-fit: contain;">
+    <!-- حاوية الـ PDF للمشاركات (تم ضبط العرض والهوامش لطباعة مثالية في صفحة واحدة دون اقتصاص) -->
+    <div style="position: absolute; left: -9999px; top: 0; width: 794px;">
+        <div id="print-sheet" dir="rtl" style="width: 794px; min-height: 1120px; box-sizing: border-box; padding: 25px 30px; background: #ffffff; color: #000000; font-family: 'Tajawal', sans-serif;">
+            <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+                <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 110px; object-fit: contain;">
             </div>
 
-            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #b45309; padding-bottom: 8px;">
-                <h2 id="print-main-title" style="font-size: 19px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
-                <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 8px; color: #333;">
+            <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #b45309; padding-bottom: 6px;">
+                <h2 id="print-main-title" style="font-size: 18px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
+                <div style="display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; margin-top: 6px; color: #333;">
                     <span id="p-class">الصف: </span>
                     <span id="p-day">اليوم: </span>
                     <span id="p-date">التاريخ: </span>
@@ -536,26 +536,26 @@
                 </div>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11.5px;">
                 <thead>
                     <tr style="background-color: #f1f5f9;">
-                        <th style="border: 1px solid #333; padding: 6px; width: 45px; text-align: center;">#</th>
-                        <th style="border: 1px solid #333; padding: 6px; text-align: right;">اسم الطالب</th>
-                        <th id="th-stars-col" style="border: 1px solid #333; padding: 6px; width: 120px; text-align: center;">نقاط المشاركة</th>
-                        <th id="th-extra-col" style="display: none; border: 1px solid #333; padding: 6px; width: 100px; text-align: center;">عدد الحصص</th>
+                        <th style="border: 1px solid #475569; padding: 4px; width: 35px; text-align: center;">#</th>
+                        <th style="border: 1px solid #475569; padding: 4px 8px; text-align: right;">اسم الطالب</th>
+                        <th id="th-stars-col" style="border: 1px solid #475569; padding: 4px; width: 100px; text-align: center;">نقاط المشاركة</th>
+                        <th id="th-extra-col" style="display: none; border: 1px solid #475569; padding: 4px; width: 90px; text-align: center;">عدد الحصص</th>
                     </tr>
                 </thead>
                 <tbody id="print-rows"></tbody>
             </table>
 
-            <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; font-weight: bold; padding: 0 20px;">
+            <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; font-weight: bold; padding: 0 30px;">
                 <div style="text-align: center;">
                     <div>معلم المادة</div>
-                    <div style="margin-top: 10px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                    <div style="margin-top: 6px; color: #1e3a8a;">أ. صبري محمد حمد</div>
                 </div>
                 <div style="text-align: center;">
                     <div>مدير المدرسة</div>
-                    <div style="margin-top: 10px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                    <div style="margin-top: 6px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
                 </div>
             </div>
         </div>
@@ -645,6 +645,7 @@
         let activeStudent = null;
         let isSpinning = false;
         let editingSessionId = null;
+        let sessionBeingEdited = null;
         let manualSessionStars = {};
         let studentToDeduct = null;
         let reviewingStudentName = null;
@@ -1064,7 +1065,6 @@
             alert(`تم توثيق المخالفة في السجل التراكمي للطالب (${studentToDeduct}).`);
         };
 
-        // نافذة استعراض وتحديد المخالفات للطالب قبل الطباعة الفردية
         const reviewModal = document.getElementById('review-behavior-modal');
         const reviewStudentInfo = document.getElementById('review-student-info');
         const reviewIncidentsList = document.getElementById('review-incidents-list');
@@ -1150,7 +1150,6 @@
             generateSpecificStudentReport(reviewingStudentName, selectedIncidents);
         };
 
-        // توليد تقرير الطباعة الفردي الرسمي للطالب
         function generateSpecificStudentReport(stName, incidents) {
             incidents.sort((a, b) => a.id - b.id);
             const printContainer = document.getElementById('print-behavior-area');
@@ -1243,7 +1242,6 @@
             }, 100);
         }
 
-        // تبويبات نافذة السجل
         const tabSessionsBtn = document.getElementById('tab-sessions-btn');
         const tabSummaryBtn = document.getElementById('tab-summary-btn');
         const tabBehaviorBtn = document.getElementById('tab-behavior-btn');
@@ -1351,7 +1349,6 @@
         behaviorFilterClass.onchange = renderBehaviorTab;
         behaviorFilterRange.onchange = renderBehaviorTab;
 
-        // طباعة كشف المخالفات المجمع للصف بالكامل
         document.getElementById('print-aggregated-behavior-btn').onclick = () => {
             const cls = behaviorFilterClass.value;
             const range = behaviorFilterRange.value;
@@ -1566,11 +1563,11 @@
             records.sort((a, b) => b.stars - a.stars);
             records.forEach((r, idx) => {
                 tbody.innerHTML += `
-                    <tr>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
-                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold;">${r.name}</td>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
-                        ${isSummary ? `<td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
+                    <tr style="page-break-inside: avoid;">
+                        <td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1px solid #475569; padding: 3px 8px; font-weight: bold;">${r.name}</td>
+                        <td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
+                        ${isSummary ? `<td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
                     </tr>
                 `;
             });
@@ -1582,11 +1579,12 @@
 
             const element = document.getElementById('print-sheet');
             const opt = {
-                margin:       8,
+                margin:       [6, 6, 6, 6],
                 filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             html2pdf().set(opt).from(element).save();
