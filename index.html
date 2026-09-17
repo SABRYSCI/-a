@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800;900&display=swap');
 
@@ -150,23 +149,31 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
 
+        /* تنسيقات الطباعة الدقيقة بنسبة 100% بدون أي اقتصاص */
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 0.8cm;
+                margin: 0.6cm;
             }
-            body { background: white !important; color: black !important; }
-            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal, #behavior-modal, #review-behavior-modal { display: none !important; }
-            .print-area { display: block !important; }
-            .single-student-notice {
+            html, body {
+                width: 100% !important;
+                height: 100% !important;
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+            }
+            .phone-widget, #toggle-panel-btn, #history-modal, #edit-session-modal, #manual-session-modal, #behavior-modal, #review-behavior-modal { 
+                display: none !important; 
+            }
+            .print-area { 
+                display: block !important; 
+                width: 100% !important;
+            }
+            .single-student-notice, .participation-print-page {
                 page-break-after: always !important;
                 break-after: page !important;
-                height: 98vh;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
                 box-sizing: border-box;
-                padding-bottom: 20px;
+                width: 100% !important;
             }
         }
         .print-area { display: none; }
@@ -255,7 +262,7 @@
                     💾 حفظ وبدء حصة جديدة
                 </button>
                 <button id="print-current-btn" class="py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center gap-1 shadow">
-                    📄 تحميل PDF سريع
+                    🖨️ طباعة / PDF الحصة
                 </button>
             </div>
             <div class="flex justify-between items-center px-1 text-[10px] text-slate-400 font-bold">
@@ -383,7 +390,7 @@
                     <span id="summary-count-info" class="text-xs font-bold text-slate-300">إجمالي المتميزين: 0</span>
                     <div class="flex gap-2 font-bold">
                         <button id="export-summary-excel-btn" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل التجميع</button>
-                        <button id="print-summary-btn" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">📄 تحميل تقرير PDF</button>
+                        <button id="print-summary-btn" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">🖨️ طباعة تقرير التجميع</button>
                     </div>
                 </div>
 
@@ -519,50 +526,8 @@
         </div>
     </div>
 
-    <!-- حاوية الـ PDF للمشاركات (تم ضبط العرض والهوامش لطباعة مثالية في صفحة واحدة دون اقتصاص) -->
-    <div style="position: absolute; left: -9999px; top: 0; width: 794px;">
-        <div id="print-sheet" dir="rtl" style="width: 794px; min-height: 1120px; box-sizing: border-box; padding: 25px 30px; background: #ffffff; color: #000000; font-family: 'Tajawal', sans-serif;">
-            <div style="width: 100%; text-align: center; margin-bottom: 8px;">
-                <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 110px; object-fit: contain;">
-            </div>
-
-            <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #b45309; padding-bottom: 6px;">
-                <h2 id="print-main-title" style="font-size: 18px; font-weight: 900; margin: 0; color: #1e3a8a;">سجل مشاركات وتميز الطلاب في مادة العلوم</h2>
-                <div style="display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; margin-top: 6px; color: #333;">
-                    <span id="p-class">الصف: </span>
-                    <span id="p-day">اليوم: </span>
-                    <span id="p-date">التاريخ: </span>
-                    <span id="p-period">الحصة: </span>
-                </div>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11.5px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9;">
-                        <th style="border: 1px solid #475569; padding: 4px; width: 35px; text-align: center;">#</th>
-                        <th style="border: 1px solid #475569; padding: 4px 8px; text-align: right;">اسم الطالب</th>
-                        <th id="th-stars-col" style="border: 1px solid #475569; padding: 4px; width: 100px; text-align: center;">نقاط المشاركة</th>
-                        <th id="th-extra-col" style="display: none; border: 1px solid #475569; padding: 4px; width: 90px; text-align: center;">عدد الحصص</th>
-                    </tr>
-                </thead>
-                <tbody id="print-rows"></tbody>
-            </table>
-
-            <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; font-weight: bold; padding: 0 30px;">
-                <div style="text-align: center;">
-                    <div>معلم المادة</div>
-                    <div style="margin-top: 6px; color: #1e3a8a;">أ. صبري محمد حمد</div>
-                </div>
-                <div style="text-align: center;">
-                    <div>مدير المدرسة</div>
-                    <div style="margin-top: 6px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- مساحة طباعة الإشعارات الرسمية للمخالفات -->
-    <div class="print-area" id="print-behavior-area"></div>
+    <!-- مساحة الطباعة العامة لجميع التقارير (متوافقة بدقة مع مقاس A4 بالمتصفح) -->
+    <div class="print-area" id="master-print-area"></div>
 
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNLOjPGe4u1YUoJkdRt9nvZNy_OGUwp1n2TOkHiK2JZQfh-8RYPe_k1oCunoYOeFTMgw/exec";
@@ -1152,20 +1117,21 @@
 
         function generateSpecificStudentReport(stName, incidents) {
             incidents.sort((a, b) => a.id - b.id);
-            const printContainer = document.getElementById('print-behavior-area');
+            const printContainer = document.getElementById('master-print-area');
             printContainer.innerHTML = '';
 
             const page = document.createElement('div');
             page.className = 'single-student-notice';
+            page.style = 'min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between; padding: 10px;';
 
             let rowsHtml = '';
             incidents.forEach((inc, idx) => {
                 rowsHtml += `
                     <tr>
-                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${idx + 1}</td>
-                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${inc.day} (${inc.date})</td>
-                        <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${inc.period}</td>
-                        <td style="border: 1px solid #333; padding: 8px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
+                        <td style="border: 1.5px solid #333; padding: 7px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1.5px solid #333; padding: 7px; text-align: center; font-weight: bold;">${inc.day} (${inc.date})</td>
+                        <td style="border: 1.5px solid #333; padding: 7px; text-align: center; font-weight: bold;">${inc.period}</td>
+                        <td style="border: 1.5px solid #333; padding: 7px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
                     </tr>
                 `;
             });
@@ -1175,32 +1141,32 @@
             page.innerHTML = `
                 <div>
                     <div style="width: 100%; text-align: center; margin-bottom: 12px;">
-                        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
+                        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 120px; object-fit: contain;">
                     </div>
 
                     <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
-                        <h2 style="font-size: 21px; font-weight: 900; margin: 0; color: #991b1b;">إشعار متابعة انضباط وتقويم سلوكي صفي</h2>
+                        <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">إشعار متابعة انضباط وتقويم سلوكي صفي</h2>
                         <p style="font-size: 13px; font-weight: bold; color: #475569; margin: 3px 0 0 0;">قسم العلوم - مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p>
                     </div>
 
-                    <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: bold; color: #1e293b; line-height: 1.7;">
+                    <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 13.5px; font-weight: bold; color: #1e293b; line-height: 1.6;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 16px;">${stName}</span></span>
+                            <span>اسم الطالب: <span style="color: #1e3a8a; font-size: 15px;">${stName}</span></span>
                             <span>الصف: <span style="color: #1e3a8a;">${behaviorFilterClass.value}</span></span>
                             <span style="color: #b91c1c;">${countText}</span>
                         </div>
-                        <p style="margin: 0; font-size: 13px; font-weight: normal; color: #334155; text-align: justify;">
+                        <p style="margin: 0; font-size: 12.5px; font-weight: normal; color: #334155; text-align: justify;">
                             المكرم ولي أمر الطالب / المشرف الإداري المحترم، نحيطكم علماً بأنه قد تم رصد المخالفات السلوكية التالية على الطالب أثناء حصص العلوم، والتي <strong>تؤثر سلباً وبشكل مباشر على درجات التقويم الصفي ودرجات السلوك والمواظبة للطالب</strong>:
                         </p>
                     </div>
 
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px;">
                         <thead>
                             <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
-                                <th style="border: 1px solid #333; padding: 8px; width: 45px; text-align: center;">#</th>
-                                <th style="border: 1px solid #333; padding: 8px; width: 160px; text-align: center;">اليوم والتاريخ</th>
-                                <th style="border: 1px solid #333; padding: 8px; width: 110px; text-align: center;">الحصة</th>
-                                <th style="border: 1px solid #333; padding: 8px; text-align: right;">نوع المخالفة السلوكية المرصودة</th>
+                                <th style="border: 1.5px solid #333; padding: 7px; width: 45px; text-align: center;">#</th>
+                                <th style="border: 1.5px solid #333; padding: 7px; width: 160px; text-align: center;">اليوم والتاريخ</th>
+                                <th style="border: 1.5px solid #333; padding: 7px; width: 110px; text-align: center;">الحصة</th>
+                                <th style="border: 1.5px solid #333; padding: 7px; text-align: right;">نوع المخالفة السلوكية المرصودة</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1208,34 +1174,34 @@
                         </tbody>
                     </table>
 
-                    <div style="margin-top: 15px; padding: 10px; border: 1.5px dashed #b91c1c; border-radius: 6px; font-size: 12.5px; font-weight: bold; color: #991b1b; text-align: center; background-color: #fff1f2;">
+                    <div style="margin-top: 15px; padding: 10px; border: 1.5px dashed #b91c1c; border-radius: 6px; font-size: 12px; font-weight: bold; color: #991b1b; text-align: center; background-color: #fff1f2;">
                         تنبيه هام: تكرار هذه المخالفات يؤدي إلى خصم درجات السلوك المعتمدة في الشهادة، نرجو منكم الجلوس مع الطالب والتنبيه عليه بضرورة الالتزام التام داخل الحصة.
                     </div>
                 </div>
 
-                <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 10px;">
+                <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12.5px; font-weight: bold; padding: 0 15px;">
                     <div style="text-align: center;">
                         <div>معلم المادة</div>
-                        <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                        <div style="margin-top: 6px; color: #1e3a8a;">أ. صبري محمد حمد</div>
                     </div>
                     <div style="text-align: center;">
                         <div>المشرف الإداري</div>
-                        <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 130px;"></div>
+                        <div style="margin-top: 20px; border-bottom: 1px dotted #333; width: 130px;"></div>
                     </div>
                     <div style="text-align: center;">
                         <div>توقيع ولي الأمر بالعلم والمتابعة</div>
-                        <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 150px;"></div>
+                        <div style="margin-top: 20px; border-bottom: 1px dotted #333; width: 150px;"></div>
                     </div>
                     <div style="text-align: center;">
                         <div>مدير المدرسة</div>
-                        <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                        <div style="margin-top: 6px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
                     </div>
                 </div>
             `;
             printContainer.appendChild(page);
 
             const originalTitle = document.title;
-            document.title = `تقرير_مخالفات_${stName}_${getDateStr()}`;
+            document.title = `إشعار_مخالفات_${stName}_${getDateStr()}`;
             setTimeout(() => {
                 window.print();
                 setTimeout(() => { document.title = originalTitle; }, 1000);
@@ -1360,72 +1326,74 @@
             }
 
             const rangeText = range === 'day' ? 'كشف يومي' : (range === 'week' ? 'كشف أسبوعي' : (range === 'month' ? 'كشف شهري' : 'سجل شامل'));
-            const printContainer = document.getElementById('print-behavior-area');
+            const printContainer = document.getElementById('master-print-area');
             printContainer.innerHTML = '';
 
             let rowsHtml = '';
             filtered.forEach((inc, idx) => {
                 rowsHtml += `
                     <tr>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
-                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold; color: #1e3a8a;">${inc.studentName}</td>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.day} (${inc.date})</td>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">${inc.period}</td>
-                        <td style="border: 1px solid #333; padding: 6px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
+                        <td style="border: 1.5px solid #333; padding: 5px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1.5px solid #333; padding: 5px 8px; font-weight: bold; color: #1e3a8a;">${inc.studentName}</td>
+                        <td style="border: 1.5px solid #333; padding: 5px; text-align: center;">${inc.day} (${inc.date})</td>
+                        <td style="border: 1.5px solid #333; padding: 5px; text-align: center;">${inc.period}</td>
+                        <td style="border: 1.5px solid #333; padding: 5px 8px; font-weight: bold; color: #991b1b;">${inc.reason}</td>
                     </tr>
                 `;
             });
 
             printContainer.innerHTML = `
-                <div>
-                    <div style="width: 100%; text-align: center; margin-bottom: 12px;">
-                        <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 130px; object-fit: contain;">
-                    </div>
-
-                    <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
-                        <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">كشف المخالفات السلوكية الصفي المجمع</h2>
-                        <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 6px; color: #333;">
-                            <span>الصف: ${cls}</span>
-                            <span>الفترة: ${rangeText}</span>
-                            <span>تاريخ التقرير: ${getDateStr()}</span>
-                            <span>إجمالي المخالفات: ${filtered.length}</span>
+                <div class="single-student-notice" style="min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between; padding: 10px;">
+                    <div>
+                        <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+                            <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 120px; object-fit: contain;">
                         </div>
+
+                        <div style="text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; margin-bottom: 14px;">
+                            <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #991b1b;">كشف المخالفات السلوكية الصفي المجمع</h2>
+                            <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; margin-top: 6px; color: #333;">
+                                <span>الصف: ${cls}</span>
+                                <span>الفترة: ${rangeText}</span>
+                                <span>تاريخ التقرير: ${getDateStr()}</span>
+                                <span>إجمالي المخالفات: ${filtered.length}</span>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
+                            <thead>
+                                <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
+                                    <th style="border: 1.5px solid #333; padding: 6px; width: 40px; text-align: center;">#</th>
+                                    <th style="border: 1.5px solid #333; padding: 6px 8px; text-align: right; width: 170px;">اسم الطالب</th>
+                                    <th style="border: 1.5px solid #333; padding: 6px; text-align: center; width: 140px;">اليوم والتاريخ</th>
+                                    <th style="border: 1.5px solid #333; padding: 6px; text-align: center; width: 90px;">الحصة</th>
+                                    <th style="border: 1.5px solid #333; padding: 6px 8px; text-align: right;">نوع المخالفة المرصودة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
                     </div>
 
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
-                        <thead>
-                            <tr style="background-color: #fee2e2; -webkit-print-color-adjust: exact;">
-                                <th style="border: 1px solid #333; padding: 6px; width: 40px; text-align: center;">#</th>
-                                <th style="border: 1px solid #333; padding: 6px; text-align: right; width: 170px;">اسم الطالب</th>
-                                <th style="border: 1px solid #333; padding: 6px; text-align: center; width: 140px;">اليوم والتاريخ</th>
-                                <th style="border: 1px solid #333; padding: 6px; text-align: center; width: 90px;">الحصة</th>
-                                <th style="border: 1px solid #333; padding: 6px; text-align: right;">نوع المخالفة المرصودة</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                    </table>
-
-                    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; font-weight: bold; padding: 0 15px;">
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12.5px; font-weight: bold; padding: 0 15px;">
                         <div style="text-align: center;">
                             <div>معلم المادة</div>
-                            <div style="margin-top: 8px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                            <div style="margin-top: 6px; color: #1e3a8a;">أ. صبري محمد حمد</div>
                         </div>
                         <div style="text-align: center;">
                             <div>المشرف الإداري</div>
-                            <div style="margin-top: 25px; border-bottom: 1px dotted #333; width: 140px;"></div>
+                            <div style="margin-top: 20px; border-bottom: 1px dotted #333; width: 140px;"></div>
                         </div>
                         <div style="text-align: center;">
                             <div>مدير المدرسة</div>
-                            <div style="margin-top: 8px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                            <div style="margin-top: 6px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
                         </div>
                     </div>
                 </div>
             `;
 
             const originalTitle = document.title;
-            document.title = `كشف_مخالفات_مجمع_${cls}_${rangeText}_${getDateStr()}`;
+            document.title = `كشف_مخالفات_${cls}_${getDateStr()}`;
             setTimeout(() => {
                 window.print();
                 setTimeout(() => { document.title = originalTitle; }, 1000);
@@ -1542,52 +1510,84 @@
             exportToExcel(fileName, rows);
         }
 
-        function triggerFastPdfDownload(cls, day, date, period, records, isSummary = false) {
-            document.getElementById('p-class').textContent = `الصف: ${cls}`;
-            document.getElementById('p-day').textContent = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
-            document.getElementById('p-date').textContent = isSummary ? `تاريخ التقرير: ${date}` : `التاريخ: ${date}`;
-            document.getElementById('p-period').textContent = isSummary ? `النوع: تجميعي` : `الحصة: ${period}`;
-
-            document.getElementById('print-main-title').textContent = isSummary 
-                ? `تقرير التميز والمشاركات التجميعي - قسم العلوم` 
-                : `سجل مشاركات وتميز الطلاب في مادة العلوم`;
-
-            const thExtra = document.getElementById('th-extra-col');
-            const thStars = document.getElementById('th-stars-col');
-            thStars.textContent = isSummary ? 'مجموع النجوم' : 'نقاط المشاركة';
-            thExtra.style.display = isSummary ? 'table-cell' : 'none';
-
-            const tbody = document.getElementById('print-rows');
-            tbody.innerHTML = '';
+        /* دالة الطباعة المباشرة فائقة الدقة عبر المتصفح لضمان عدم اقتصاص أي عمود أو صفحة */
+        function triggerNativePrintSheet(cls, day, date, period, records, isSummary = false) {
+            const printContainer = document.getElementById('master-print-area');
+            printContainer.innerHTML = '';
 
             records.sort((a, b) => b.stars - a.stars);
+
+            let rowsHtml = '';
             records.forEach((r, idx) => {
-                tbody.innerHTML += `
-                    <tr style="page-break-inside: avoid;">
-                        <td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold;">${idx + 1}</td>
-                        <td style="border: 1px solid #475569; padding: 3px 8px; font-weight: bold;">${r.name}</td>
-                        <td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
-                        ${isSummary ? `<td style="border: 1px solid #475569; padding: 3px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
+                rowsHtml += `
+                    <tr>
+                        <td style="border: 1.5px solid #333; padding: 4px 6px; text-align: center; font-weight: bold;">${idx + 1}</td>
+                        <td style="border: 1.5px solid #333; padding: 4px 10px; font-weight: bold;">${r.name}</td>
+                        <td style="border: 1.5px solid #333; padding: 4px 6px; text-align: center; font-weight: bold; color: #b45309;">⭐ ${r.stars}</td>
+                        ${isSummary ? `<td style="border: 1.5px solid #333; padding: 4px 6px; text-align: center; font-weight: bold;">${r.sessionsCount || 1}</td>` : ''}
                     </tr>
                 `;
             });
 
-            const cleanDate = date.replace(/[\/\\]/g, '-');
-            const fileName = isSummary 
-                ? `تجميع_مشاركات_${cls}_${day}_${cleanDate}.pdf`
-                : `مشاركات_${cls}_${period}_${day}_${cleanDate}.pdf`;
+            const mainTitle = isSummary 
+                ? 'تقرير التميز والمشاركات التجميعي - قسم العلوم' 
+                : 'سجل مشاركات وتميز الطلاب في مادة العلوم';
 
-            const element = document.getElementById('print-sheet');
-            const opt = {
-                margin:       [6, 6, 6, 6],
-                filename:     fileName,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-            };
+            const periodLabel = isSummary ? 'النوع: تجميعي' : `الحصة: ${period}`;
+            const dayLabel = isSummary ? `الفترة: ${day}` : `اليوم: ${day}`;
 
-            html2pdf().set(opt).from(element).save();
+            printContainer.innerHTML = `
+                <div class="participation-print-page" style="min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; width: 100%;">
+                    <div>
+                        <div style="width: 100%; text-align: center; margin-bottom: 10px;">
+                            <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة المدرسة" style="width: 100%; max-height: 120px; object-fit: contain;">
+                        </div>
+
+                        <div style="text-align: center; border-bottom: 2px solid #b45309; padding-bottom: 6px; margin-bottom: 12px;">
+                            <h2 style="font-size: 19px; font-weight: 900; margin: 0; color: #1e3a8a;">${mainTitle}</h2>
+                            <div style="display: flex; justify-content: space-around; font-size: 12.5px; font-weight: bold; margin-top: 6px; color: #333;">
+                                <span>الصف: ${cls}</span>
+                                <span>${dayLabel}</span>
+                                <span>التاريخ: ${date}</span>
+                                <span>${periodLabel}</span>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9; -webkit-print-color-adjust: exact;">
+                                    <th style="border: 1.5px solid #333; padding: 5px; width: 45px; text-align: center;">#</th>
+                                    <th style="border: 1.5px solid #333; padding: 5px 10px; text-align: right;">اسم الطالب</th>
+                                    <th style="border: 1.5px solid #333; padding: 5px; width: 120px; text-align: center;">${isSummary ? 'مجموع النجوم' : 'نقاط المشاركة'}</th>
+                                    ${isSummary ? '<th style="border: 1.5px solid #333; padding: 5px; width: 90px; text-align: center;">عدد الحصص</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12.5px; font-weight: bold; padding: 0 20px;">
+                        <div style="text-align: center;">
+                            <div>معلم المادة</div>
+                            <div style="margin-top: 6px; color: #1e3a8a;">أ. صبري محمد حمد</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>مدير المدرسة</div>
+                            <div style="margin-top: 6px; color: #1e3a8a;">الأستاذ: محمد ابراهيم محمد ناصر</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const originalTitle = document.title;
+            document.title = isSummary ? `تجميع_مشاركات_${cls}_${date}` : `مشاركات_${cls}_${period}_${date}`;
+            
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => { document.title = originalTitle; }, 1000);
+            }, 100);
         }
 
         document.getElementById('print-current-btn').onclick = () => {
@@ -1597,11 +1597,11 @@
                 .filter(p => p.stars > 0);
 
             if (participants.length === 0) {
-                alert('لا توجد نجوم مشاركة مسجلة لتحميلها.');
+                alert('لا توجد نجوم مشاركة مسجلة لطباعتها.');
                 return;
             }
 
-            triggerFastPdfDownload(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
+            triggerNativePrintSheet(currentClass, getDayName(), getDateStr(), periodSelect.value, participants);
         };
 
         const historyModal = document.getElementById('history-modal');
@@ -1631,7 +1631,7 @@
                         <div class="flex items-center gap-1.5 font-bold">
                             <button class="edit-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs">✏️ تعديل</button>
                             <button class="excel-btn px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs">📥 إكسيل</button>
-                            <button class="reprint-btn px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">📄 تحميل PDF</button>
+                            <button class="reprint-btn px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs">🖨️ طباعة</button>
                         </div>
                     </div>
                 `;
@@ -1639,7 +1639,7 @@
                 item.querySelector('.edit-btn').onclick = () => openEditSessionModal(session.id);
                 item.querySelector('.excel-btn').onclick = () => exportSessionExcel(session);
                 item.querySelector('.reprint-btn').onclick = () => {
-                    triggerFastPdfDownload(session.className, session.day, session.date, session.period, session.records);
+                    triggerNativePrintSheet(session.className, session.day, session.date, session.period, session.records);
                 };
                 historyList.appendChild(item);
             });
@@ -1997,11 +1997,11 @@
             const range = summaryRangeSelect.value;
             const data = getAggregatedData(cls, range);
             if (data.length === 0) {
-                alert('لا توجد بيانات لتحميلها.');
+                alert('لا توجد بيانات لطباعتها.');
                 return;
             }
             const rangeText = range === 'week' ? 'التقرير الأسبوعي' : (range === 'month' ? 'التقرير الشهري' : 'السجل الشامل');
-            triggerFastPdfDownload(cls, rangeText, getDateStr(), 'تجميعي', data, true);
+            triggerNativePrintSheet(cls, rangeText, getDateStr(), 'تجميعي', data, true);
         };
 
         classSelect.onchange = (e) => {
