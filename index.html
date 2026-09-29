@@ -84,6 +84,7 @@
             padding: 6px 12px;
             border-radius: 16px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
         }
 
         .student-result-name {
@@ -120,7 +121,7 @@
             transition: all 0.15s;
         }
 
-        .student-item:hover { 
+        .student-item:not(.opacity-50):hover { 
             border-color: #38bdf8;
             transform: translateX(-2px);
         }
@@ -240,9 +241,13 @@
                 </div>
             </div>
 
-            <div class="student-result-card flex items-center justify-center gap-2">
-                <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
-                <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
+            <div class="student-result-card">
+                <button id="mark-active-absent-btn" class="absolute right-2 top-2 w-7 h-7 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg text-xs font-black hidden transition shadow" title="تسجيل غياب">غ</button>
+                
+                <div class="flex items-center justify-center gap-2">
+                    <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
+                    <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
+                </div>
             </div>
 
             <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
@@ -277,23 +282,23 @@
         </footer>
     </aside>
 
-    <!-- نافذة السحب الثلاثي (الجديدة) -->
-    <div id="triple-spin-modal" class="fixed inset-0 bg-black/85 z-[10010] hidden items-center justify-center p-4 transition-opacity">
-        <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl w-full max-w-2xl p-6 shadow-2xl flex flex-col gap-4 transform transition-all duration-300">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+    <!-- نافذة السحب الثلاثي (مصغرة ومناسبة للنافذة الجانبية) -->
+    <div id="triple-spin-modal" class="fixed inset-0 bg-black/85 z-[10010] hidden items-center justify-center p-3 transition-opacity">
+        <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl w-full max-w-sm p-4 shadow-2xl flex flex-col gap-3 transform transition-all duration-300">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <div>
-                    <h2 class="text-2xl font-black text-emerald-400">🎉 السحب العادل المتعدد 🎉</h2>
-                    <p class="text-sm text-slate-300 mt-1">تم اختيار 3 طلاب بشكل عشوائي مع أولوية الأقل مشاركة</p>
+                    <h2 class="text-lg font-black text-emerald-400">🎉 سحب 3 طلاب</h2>
+                    <p class="text-[10px] text-slate-300 mt-1">تم الاختيار بأولوية الأقل مشاركة</p>
                 </div>
-                <button id="close-triple-modal" class="text-slate-400 hover:text-white text-3xl font-bold bg-slate-700 hover:bg-red-600 w-10 h-10 flex items-center justify-center rounded-xl transition">✕</button>
+                <button id="close-triple-modal" class="text-slate-400 hover:text-white text-xl font-bold bg-slate-700 hover:bg-red-600 w-8 h-8 flex items-center justify-center rounded-lg transition">✕</button>
             </div>
 
-            <div id="triple-students-container" class="flex flex-col gap-3 my-2">
+            <div id="triple-students-container" class="flex flex-col gap-2 my-1">
                 <!-- سيتم إدراج الطلاب هنا -->
             </div>
 
-            <div class="mt-2 text-center text-xs text-slate-400 font-bold">
-                الضغط على (+) يزيد نجمة، والضغط على (-) ينقص نجمة. التعديلات تحفظ فوراً.
+            <div class="mt-1 text-center text-[10px] text-slate-400 font-bold">
+                (غ) لتسجيل الطالب غائب واستبعاده من السحب القادم
             </div>
         </div>
     </div>
@@ -632,6 +637,7 @@
 
         let currentClass = '6ب1';
         let studentPool = [];
+        let absentStudents = []; // مصفوفة الطلاب الغائبين
         let classStars = {};
         let activeStudent = null;
         let isSpinning = false;
@@ -692,11 +698,12 @@
         const periodSelect = document.getElementById('period-select');
         
         const spinMainBtn = document.getElementById('spin-main-btn');
-        const spinThreeBtn = document.getElementById('spin-three-btn'); // الزر الجديد
+        const spinThreeBtn = document.getElementById('spin-three-btn'); 
         
         const miniBox = document.getElementById('mini-box');
         const targetStudentName = document.getElementById('target-student-name');
         const targetStudentStars = document.getElementById('target-student-stars');
+        const markActiveAbsentBtn = document.getElementById('mark-active-absent-btn'); // زر الغياب الفردي
         const quickStars = document.getElementById('quick-stars');
         const studentsContainer = document.getElementById('students-container');
         const totalCount = document.getElementById('total-count');
@@ -711,6 +718,9 @@
         function loadClassData() {
             const savedStars = localStorage.getItem(`widget_session_${currentClass}`);
             classStars = savedStars ? JSON.parse(savedStars) : {};
+            
+            // تحميل قائمة الغياب
+            absentStudents = JSON.parse(localStorage.getItem(`widget_absent_${currentClass}`)) || [];
 
             const savedPool = localStorage.getItem(`widget_pool_${currentClass}`);
             const all = studentDatabase[currentClass] || [];
@@ -719,14 +729,14 @@
                 try {
                     studentPool = JSON.parse(savedPool);
                 } catch(e) {
-                    studentPool = [...all];
+                    studentPool = [...all].filter(s => !absentStudents.includes(s));
                 }
             } else {
-                studentPool = [...all];
+                studentPool = [...all].filter(s => !absentStudents.includes(s));
             }
 
             if (!Array.isArray(studentPool) || studentPool.length === 0) {
-                studentPool = [...all];
+                studentPool = [...all].filter(s => !absentStudents.includes(s));
                 savePoolData();
             }
 
@@ -742,13 +752,20 @@
         function savePoolData() {
             localStorage.setItem(`widget_pool_${currentClass}`, JSON.stringify(studentPool));
         }
+        
+        function saveAbsentData() {
+            localStorage.setItem(`widget_absent_${currentClass}`, JSON.stringify(absentStudents));
+        }
 
         function updatePoolDisplay() {
             const all = studentDatabase[currentClass] || [];
-            poolRemaining.textContent = `${studentPool.length} من ${all.length}`;
-            if (studentPool.length === all.length) {
+            const eligibleCount = all.length - absentStudents.length;
+            
+            poolRemaining.textContent = `${studentPool.length} من ${eligibleCount}`;
+            
+            if (studentPool.length === eligibleCount && eligibleCount > 0) {
                 poolStatus.textContent = "(دورة سحب جديدة)";
-            } else if (studentPool.length === 0) {
+            } else if (studentPool.length === 0 && eligibleCount > 0) {
                 poolStatus.textContent = "(اكتملت الدورة)";
             } else {
                 poolStatus.textContent = "";
@@ -756,7 +773,7 @@
         }
 
         function updateTargetCardStars() {
-            if (activeStudent) {
+            if (activeStudent && !absentStudents.includes(activeStudent)) {
                 const s = classStars[activeStudent] || 0;
                 targetStudentStars.textContent = s > 0 ? `⭐ ${s}` : '';
                 targetStudentStars.classList.toggle('hidden', s === 0);
@@ -772,36 +789,36 @@
 
             all.forEach((name, i) => {
                 const stars = classStars[name] || 0;
-                const isChosenInThisCycle = !studentPool.includes(name);
+                const isAbsent = absentStudents.includes(name);
+                const isChosenInThisCycle = !studentPool.includes(name) && !isAbsent;
 
                 const row = document.createElement('div');
-                row.className = `student-item p-2 rounded-xl flex items-center justify-between cursor-pointer ${stars > 0 ? 'has-stars' : ''} ${isChosenInThisCycle ? 'already-chosen' : ''}`;
+                row.className = `student-item p-2 rounded-xl flex items-center justify-between cursor-pointer ${stars > 0 && !isAbsent ? 'has-stars' : ''} ${isChosenInThisCycle ? 'already-chosen' : ''} ${isAbsent ? 'opacity-50 grayscale bg-slate-900 border-slate-700' : ''}`;
                 
-                // تم تعديل هذا الجزء لإضافة زر الطرح (-) بجوار النجوم
                 row.innerHTML = `
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="truncate font-black tracking-wide">${i + 1}. ${name}</span>
-                        ${isChosenInThisCycle ? '<span class="text-[9px] text-sky-400 font-bold bg-sky-950/60 px-1.5 py-0.5 rounded">شارك</span>' : ''}
+                    <div class="flex items-center gap-1.5 truncate w-2/3">
+                        <span class="truncate font-black tracking-wide ${isAbsent ? 'line-through text-slate-500' : ''}">${i + 1}. ${name}</span>
+                        ${isAbsent ? '<span class="text-[9px] text-red-400 font-bold bg-red-950/60 px-1.5 py-0.5 rounded">غائب</span>' : (isChosenInThisCycle ? '<span class="text-[9px] text-sky-400 font-bold bg-sky-950/60 px-1.5 py-0.5 rounded">شارك</span>' : '')}
                     </div>
                     <div class="flex items-center gap-1">
-                        ${stars > 0 ? `<button class="list-minus-btn w-6 h-6 rounded bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center font-black transition-colors" data-name="${name}">-</button>` : ''}
-                        <span class="text-amber-400 font-black text-sm w-7 text-left">${stars > 0 ? '⭐ ' + stars : ''}</span>
+                        ${stars > 0 && !isAbsent ? `<button class="list-minus-btn w-6 h-6 rounded bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center font-black transition-colors" data-name="${name}">-</button>` : ''}
+                        <span class="text-amber-400 font-black text-sm w-7 text-left">${stars > 0 && !isAbsent ? '⭐ ' + stars : ''}</span>
                     </div>
                 `;
 
-                // النقر على الصف يضيف نجمة
                 row.onclick = () => {
+                    if (isAbsent) return; // تعطيل الإضافة للغائبين
                     classStars[name] = (classStars[name] || 0) + 1;
                     saveClassData();
                     renderStudentList();
                     if (activeStudent === name) updateTargetCardStars();
                 };
                 
-                // النقر على زر الناقص (-) ينقص نجمة، مع منع تنشيط النقر على الصف
                 const minusBtn = row.querySelector('.list-minus-btn');
                 if (minusBtn) {
                     minusBtn.onclick = (e) => {
-                        e.stopPropagation(); // لمنع تفعيل row.onclick
+                        e.stopPropagation(); 
+                        if (isAbsent) return;
                         if(classStars[name] > 0) {
                             classStars[name]--;
                             saveClassData();
@@ -813,7 +830,7 @@
 
                 row.oncontextmenu = (e) => {
                     e.preventDefault();
-                    openBehaviorModal(name);
+                    if(!isAbsent) openBehaviorModal(name);
                 };
 
                 studentsContainer.appendChild(row);
@@ -837,10 +854,20 @@
             if (isSpinning) return;
 
             const all = studentDatabase[currentClass] || [];
+            
+            // تهيئة واجهة البطاقة قبل السحب
+            targetStudentName.classList.remove('text-slate-400', 'line-through');
+            markActiveAbsentBtn.classList.add('hidden');
+
             if (studentPool.length === 0) {
-                studentPool = [...all];
+                studentPool = [...all].filter(s => !absentStudents.includes(s));
                 savePoolData();
                 updatePoolDisplay();
+            }
+            
+            if (studentPool.length === 0) {
+                alert("جميع الطلاب مسجلين غياب!");
+                return;
             }
 
             let minStars = Infinity;
@@ -871,6 +898,9 @@
                 activeStudent = winner;
                 targetStudentName.textContent = winner;
                 updateTargetCardStars();
+                
+                // إظهار زر الغياب بعد إعلان النتيجة
+                markActiveAbsentBtn.classList.remove('hidden');
 
                 const poolIndex = studentPool.indexOf(winner);
                 if (poolIndex > -1) {
@@ -891,12 +921,38 @@
             }, 1000);
         }
         
+        // زر الغياب الفردي
+        markActiveAbsentBtn.onclick = () => {
+            if (activeStudent && !absentStudents.includes(activeStudent)) {
+                absentStudents.push(activeStudent);
+                saveAbsentData();
+                delete classStars[activeStudent]; // تصفير نجومه
+                saveClassData();
+                
+                const pIdx = studentPool.indexOf(activeStudent);
+                if (pIdx > -1) {
+                    studentPool.splice(pIdx, 1);
+                    savePoolData();
+                }
+                
+                targetStudentName.textContent = activeStudent;
+                targetStudentName.classList.add('text-slate-500', 'line-through');
+                targetStudentStars.classList.add('hidden');
+                markActiveAbsentBtn.classList.add('hidden');
+                
+                updatePoolDisplay();
+                renderStudentList();
+            }
+        };
+        
         // خوارزمية سحب 3 طلاب دفعة واحدة
         async function executeTripleSpin() {
             if (isSpinning) return;
             const all = studentDatabase[currentClass] || [];
-            if (all.length < 3) {
-                alert('عدد طلاب الصف أقل من 3، لا يمكن إجراء سحب ثلاثي.');
+            
+            const eligibleCount = all.length - absentStudents.length;
+            if (eligibleCount < 3) {
+                alert('عدد الطلاب الحاضرين أقل من 3، لا يمكن إجراء سحب ثلاثي.');
                 return;
             }
 
@@ -909,8 +965,9 @@
             let selected = [];
             for (let i = 0; i < 3; i++) {
                 if (studentPool.length === 0) {
-                    studentPool = [...all]; // إعادة التعبئة إذا نفد الوعاء أثناء السحب
+                    studentPool = [...all].filter(s => !absentStudents.includes(s));
                 }
+                if (studentPool.length === 0) break; 
                 
                 let minStars = Infinity;
                 studentPool.forEach(st => {
@@ -930,7 +987,7 @@
             savePoolData();
             updatePoolDisplay();
             
-            currentTripleSelection = selected; // حفظ الأسماء المختارة
+            currentTripleSelection = selected; 
             
             // تأثير صوتي تتابعي
             audioSynth.triggerAttackRelease("C5", "8n");
@@ -941,7 +998,7 @@
                 launchConfetti();
                 renderStudentList(); // تحديث القائمة الخلفية
                 
-                // عرض النافذة المنبثقة
+                // عرض النافذة المنبثقة بحجم مناسب
                 renderTripleModalContent();
                 const tripleModal = document.getElementById('triple-spin-modal');
                 tripleModal.classList.remove('hidden');
@@ -960,33 +1017,74 @@
             
             currentTripleSelection.forEach(stName => {
                 const stars = classStars[stName] || 0;
+                const isAbsent = absentStudents.includes(stName);
+                
                 const row = document.createElement('div');
-                row.className = 'bg-slate-900/60 border border-slate-600 rounded-2xl p-4 flex justify-between items-center shadow-inner';
+                row.className = `bg-slate-900/60 border ${isAbsent ? 'border-red-900/50 opacity-60' : 'border-slate-600'} rounded-xl p-2.5 flex justify-between items-center shadow-inner`;
                 
                 row.innerHTML = `
-                    <div class="text-lg sm:text-xl font-black text-sky-300 truncate w-1/2">${stName}</div>
-                    <div class="flex items-center gap-3 md:gap-4">
-                        <button class="t-minus w-10 h-10 md:w-12 md:h-12 bg-red-600 hover:bg-red-500 rounded-xl text-white font-black text-2xl shadow-lg transition active:scale-90">-</button>
-                        <span class="w-16 md:w-20 text-center text-2xl md:text-3xl font-black text-amber-400 drop-shadow-md">⭐ ${stars}</span>
-                        <button class="t-plus w-10 h-10 md:w-12 md:h-12 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-black text-2xl shadow-lg transition active:scale-90">+</button>
+                    <div class="text-sm sm:text-base font-black ${isAbsent ? 'text-slate-400 line-through' : 'text-sky-300'} truncate w-5/12 pr-1" title="${stName}">${stName}</div>
+                    <div class="flex items-center justify-end gap-1.5 w-7/12">
+                        ${!isAbsent ? `
+                            <button class="btn-absent w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 font-bold text-xs transition shadow" title="تسجيل غياب">غ</button>
+                            <button class="t-minus w-7 h-7 bg-red-600 hover:bg-red-500 rounded text-white font-black text-lg shadow transition active:scale-90">-</button>
+                            <span class="w-10 text-center text-sm sm:text-base font-black text-amber-400">⭐ ${stars}</span>
+                            <button class="t-plus w-7 h-7 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-black text-lg shadow transition active:scale-90">+</button>
+                        ` : `
+                            <span class="text-xs font-bold text-red-400 px-2">غائب</span>
+                            <button class="btn-undo-absent w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 font-bold text-xs transition shadow" title="إلغاء الغياب وإرجاعه للسحب">↩</button>
+                        `}
                     </div>
                 `;
                 
-                row.querySelector('.t-minus').onclick = () => {
-                    if (classStars[stName] > 0) {
-                        classStars[stName]--;
+                if (!isAbsent) {
+                    row.querySelector('.t-minus').onclick = () => {
+                        if (classStars[stName] > 0) {
+                            classStars[stName]--;
+                            saveClassData();
+                            renderStudentList();
+                            renderTripleModalContent();
+                        }
+                    };
+                    
+                    row.querySelector('.t-plus').onclick = () => {
+                        classStars[stName] = (classStars[stName] || 0) + 1;
                         saveClassData();
-                        renderStudentList(); // تحديث القائمة الجانبية
-                        renderTripleModalContent(); // تحديث النافذة نفسها
-                    }
-                };
-                
-                row.querySelector('.t-plus').onclick = () => {
-                    classStars[stName] = (classStars[stName] || 0) + 1;
-                    saveClassData();
-                    renderStudentList(); 
-                    renderTripleModalContent();
-                };
+                        renderStudentList(); 
+                        renderTripleModalContent();
+                    };
+                    
+                    row.querySelector('.btn-absent').onclick = () => {
+                        absentStudents.push(stName);
+                        saveAbsentData();
+                        delete classStars[stName]; // تصفير النجوم
+                        saveClassData();
+                        
+                        // سحبه من الوعاء إن وجد
+                        const pIdx = studentPool.indexOf(stName);
+                        if (pIdx > -1) {
+                            studentPool.splice(pIdx, 1);
+                            savePoolData();
+                        }
+                        
+                        updatePoolDisplay();
+                        renderStudentList();
+                        renderTripleModalContent();
+                    };
+                } else {
+                    row.querySelector('.btn-undo-absent').onclick = () => {
+                        absentStudents = absentStudents.filter(name => name !== stName);
+                        saveAbsentData();
+                        
+                        // إرجاعه لوعاء السحب
+                        studentPool.push(stName);
+                        savePoolData();
+                        
+                        updatePoolDisplay();
+                        renderStudentList();
+                        renderTripleModalContent();
+                    };
+                }
                 
                 container.appendChild(row);
             });
@@ -1001,7 +1099,7 @@
         // ربط أزرار النجوم السريعة العادية
         document.querySelectorAll('.score-btn').forEach(b => {
             b.onclick = () => {
-                if (!activeStudent) return;
+                if (!activeStudent || absentStudents.includes(activeStudent)) return;
                 const val = parseInt(b.dataset.val);
                 if (val > 0) {
                     classStars[activeStudent] = (classStars[activeStudent] || 0) + val;
@@ -1040,10 +1138,10 @@
             const all = studentDatabase[currentClass] || [];
             const participants = all
                 .map(name => ({ name, stars: classStars[name] || 0 }))
-                .filter(p => p.stars > 0);
+                .filter(p => p.stars > 0 && !absentStudents.includes(p.name));
 
             if (participants.length === 0) {
-                if (confirm(`لا توجد نجوم مسجلة حالياً لصف (${currentClass}). هل تريد تصفير الحصة وبدء حصة جديدة؟`)) {
+                if (confirm(`لا توجد نجوم مشاركة مسجلة لصف (${currentClass}). هل تريد تصفير الحصة وبدء حصة جديدة (وإلغاء الغيابات)؟`)) {
                     resetCurrentSessionDirectly();
                 }
                 return;
@@ -1091,18 +1189,26 @@
         function resetCurrentSessionDirectly() {
             classStars = {};
             localStorage.removeItem(`widget_session_${currentClass}`);
+            
+            // تصفير قائمة الغياب أيضاً
+            absentStudents = [];
+            localStorage.removeItem(`widget_absent_${currentClass}`);
+            
             studentPool = [...(studentDatabase[currentClass] || [])];
             savePoolData();
 
             activeStudent = null;
             targetStudentName.textContent = 'اضغط للبدء';
+            targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
+            markActiveAbsentBtn.classList.add('hidden');
             quickStars.classList.add('opacity-40', 'pointer-events-none');
+            
             loadClassData();
         }
 
         document.getElementById('reset-session-btn').onclick = () => {
-            if (confirm(`هل تريد تصفير نجوم (${currentClass}) للحصة الحالية بدون حفظ؟`)) {
+            if (confirm(`هل تريد تصفير نجوم (${currentClass}) والغيابات للحصة الحالية بدون حفظ؟`)) {
                 resetCurrentSessionDirectly();
             }
         };
@@ -1755,7 +1861,7 @@
             const all = studentDatabase[currentClass] || [];
             const participants = all
                 .map(name => ({ name, stars: classStars[name] || 0 }))
-                .filter(p => p.stars > 0);
+                .filter(p => p.stars > 0 && !absentStudents.includes(p.name));
 
             if (participants.length === 0) {
                 alert('لا توجد نجوم مشاركة مسجلة لطباعتها.');
@@ -2170,10 +2276,15 @@
             summaryClassSelect.value = currentClass;
             manualClassSelect.value = currentClass;
             behaviorFilterClass.value = currentClass;
+            
+            // إعادة تعيين واجهة المستخدم للفصل الجديد
             activeStudent = null;
             targetStudentName.textContent = 'اضغط للبدء';
+            targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
+            markActiveAbsentBtn.classList.add('hidden');
             quickStars.classList.add('opacity-40', 'pointer-events-none');
+            
             loadClassData();
             if (!tabBehaviorContent.classList.contains('hidden')) renderBehaviorTab();
         };
