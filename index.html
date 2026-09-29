@@ -242,23 +242,19 @@
             </div>
 
             <div class="student-result-card">
-                <!-- أزرار الإجراءات السريعة (غياب / ناقص) -->
-                <div class="absolute right-2 top-2 flex gap-1.5 z-10">
-                    <button id="mark-active-absent-btn" class="w-7 h-7 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg text-xs font-black hidden transition shadow flex items-center justify-center" title="تسجيل غياب">غ</button>
-                    <button id="decrement-active-star-btn" class="w-7 h-7 bg-slate-700 hover:bg-red-500 text-slate-300 hover:text-white rounded-lg text-lg font-black hidden transition shadow flex items-center justify-center leading-none pb-1" title="إنقاص نجمة">-</button>
-                </div>
-                
+                <!-- تم تفريغ الأزرار الجانبية المزعجة لتوفير مساحة لاسم الطالب -->
                 <div class="flex items-center justify-center gap-2">
                     <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
                     <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
                 </div>
             </div>
 
-            <div id="quick-stars" class="grid grid-cols-4 gap-1 opacity-40 pointer-events-none transition-all">
-                <button data-val="1" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐ 1</button>
-                <button data-val="2" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐ 2</button>
-                <button data-val="3" class="score-btn py-1 rounded-lg bg-slate-800 border border-slate-600 hover:border-amber-400 text-amber-400 font-black text-xs">⭐⭐⭐ 3</button>
-                <button data-val="0" class="score-btn py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-red-400 font-bold text-[10px]">بدون (0)</button>
+            <!-- لوحة التحكم السريعة للطالب المسحوب (غ، -، +، 0) -->
+            <div id="quick-actions" class="grid grid-cols-4 gap-1.5 opacity-40 pointer-events-none transition-all">
+                <button id="action-absent-btn" class="py-1 rounded-lg bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white font-black text-xs transition shadow">غ (غائب)</button>
+                <button id="action-minus-btn" class="py-1 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">-</button>
+                <button id="action-plus-btn" class="py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">+</button>
+                <button id="action-zero-btn" class="py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 font-bold text-[11px] transition shadow">بدون (0)</button>
             </div>
         </div>
 
@@ -708,10 +704,13 @@
         const targetStudentName = document.getElementById('target-student-name');
         const targetStudentStars = document.getElementById('target-student-stars');
         
-        const markActiveAbsentBtn = document.getElementById('mark-active-absent-btn'); 
-        const decrementActiveStarBtn = document.getElementById('decrement-active-star-btn'); // الزر الجديد للسالب الفردي
+        // الأزرار الأربعة الجديدة في اللوحة السفلية
+        const actionAbsentBtn = document.getElementById('action-absent-btn');
+        const actionMinusBtn = document.getElementById('action-minus-btn');
+        const actionPlusBtn = document.getElementById('action-plus-btn');
+        const actionZeroBtn = document.getElementById('action-zero-btn');
+        const quickActionsPanel = document.getElementById('quick-actions');
         
-        const quickStars = document.getElementById('quick-stars');
         const studentsContainer = document.getElementById('students-container');
         const totalCount = document.getElementById('total-count');
         const poolRemaining = document.getElementById('pool-remaining');
@@ -861,8 +860,7 @@
             const all = studentDatabase[currentClass] || [];
             
             targetStudentName.classList.remove('text-slate-400', 'line-through');
-            markActiveAbsentBtn.classList.add('hidden');
-            decrementActiveStarBtn.classList.add('hidden');
+            quickActionsPanel.classList.add('opacity-40', 'pointer-events-none');
 
             if (studentPool.length === 0) {
                 studentPool = [...all].filter(s => !absentStudents.includes(s));
@@ -890,7 +888,6 @@
             isSpinning = true;
             spinMainBtn.disabled = true;
             spinThreeBtn.disabled = true;
-            quickStars.classList.add('opacity-40', 'pointer-events-none');
             miniBox.style.animationPlayState = 'running';
             targetStudentName.textContent = 'جاري السحب العادل...';
             targetStudentStars.classList.add('hidden');
@@ -904,9 +901,8 @@
                 targetStudentName.textContent = winner;
                 updateTargetCardStars();
                 
-                // إظهار أزرار الإجراءات السريعة
-                markActiveAbsentBtn.classList.remove('hidden');
-                decrementActiveStarBtn.classList.remove('hidden');
+                // تفعيل أزرار اللوحة السريعة بعد اختيار الطالب
+                quickActionsPanel.classList.remove('opacity-40', 'pointer-events-none');
 
                 const poolIndex = studentPool.indexOf(winner);
                 if (poolIndex > -1) {
@@ -920,14 +916,14 @@
                 audioSynth.triggerAttackRelease("E5", "8n");
                 launchConfetti();
 
-                quickStars.classList.remove('opacity-40', 'pointer-events-none');
                 isSpinning = false;
                 spinMainBtn.disabled = false;
                 spinThreeBtn.disabled = false;
             }, 1000);
         }
         
-        markActiveAbsentBtn.onclick = () => {
+        // برمجة الأزرار الأربعة السريعة الفردية
+        actionAbsentBtn.onclick = () => {
             if (activeStudent && !absentStudents.includes(activeStudent)) {
                 absentStudents.push(activeStudent);
                 saveAbsentData();
@@ -944,17 +940,15 @@
                 targetStudentName.classList.add('text-slate-500', 'line-through');
                 targetStudentStars.classList.add('hidden');
                 
-                // إخفاء الأزرار بمجرد تسجيله غياب
-                markActiveAbsentBtn.classList.add('hidden');
-                decrementActiveStarBtn.classList.add('hidden');
+                // إغلاق لوحة الأزرار لمنع التعديل عليه بعد غيابه
+                quickActionsPanel.classList.add('opacity-40', 'pointer-events-none');
                 
                 updatePoolDisplay();
                 renderStudentList();
             }
         };
 
-        // زر السالب الجديد للسحب الفردي
-        decrementActiveStarBtn.onclick = () => {
+        actionMinusBtn.onclick = () => {
             if (activeStudent && !absentStudents.includes(activeStudent)) {
                 if (classStars[activeStudent] > 0) {
                     classStars[activeStudent]--;
@@ -962,6 +956,24 @@
                     renderStudentList();
                     updateTargetCardStars();
                 }
+            }
+        };
+
+        actionPlusBtn.onclick = () => {
+            if (activeStudent && !absentStudents.includes(activeStudent)) {
+                classStars[activeStudent] = (classStars[activeStudent] || 0) + 1;
+                saveClassData();
+                renderStudentList();
+                updateTargetCardStars();
+            }
+        };
+
+        actionZeroBtn.onclick = () => {
+            if (activeStudent && !absentStudents.includes(activeStudent)) {
+                delete classStars[activeStudent];
+                saveClassData();
+                renderStudentList();
+                updateTargetCardStars();
             }
         };
         
@@ -1113,21 +1125,6 @@
             tripleModal.classList.remove('flex');
         };
 
-        document.querySelectorAll('.score-btn').forEach(b => {
-            b.onclick = () => {
-                if (!activeStudent || absentStudents.includes(activeStudent)) return;
-                const val = parseInt(b.dataset.val);
-                if (val > 0) {
-                    classStars[activeStudent] = (classStars[activeStudent] || 0) + val;
-                } else {
-                    if (!classStars[activeStudent]) classStars[activeStudent] = 0;
-                }
-                saveClassData();
-                renderStudentList();
-                updateTargetCardStars();
-            };
-        });
-
         function getArchiveHistory() {
             return JSON.parse(localStorage.getItem('sessions_archive_history')) || [];
         }
@@ -1217,10 +1214,7 @@
             targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
             
-            markActiveAbsentBtn.classList.add('hidden');
-            decrementActiveStarBtn.classList.add('hidden');
-            
-            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            quickActionsPanel.classList.add('opacity-40', 'pointer-events-none');
             
             loadClassData();
         }
@@ -2301,10 +2295,7 @@
             targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
             
-            markActiveAbsentBtn.classList.add('hidden');
-            decrementActiveStarBtn.classList.add('hidden');
-            
-            quickStars.classList.add('opacity-40', 'pointer-events-none');
+            quickActionsPanel.classList.add('opacity-40', 'pointer-events-none');
             
             loadClassData();
             if (!tabBehaviorContent.classList.contains('hidden')) renderBehaviorTab();
