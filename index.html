@@ -242,7 +242,11 @@
             </div>
 
             <div class="student-result-card">
-                <button id="mark-active-absent-btn" class="absolute right-2 top-2 w-7 h-7 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg text-xs font-black hidden transition shadow" title="تسجيل غياب">غ</button>
+                <!-- أزرار الإجراءات السريعة (غياب / ناقص) -->
+                <div class="absolute right-2 top-2 flex gap-1.5 z-10">
+                    <button id="mark-active-absent-btn" class="w-7 h-7 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg text-xs font-black hidden transition shadow flex items-center justify-center" title="تسجيل غياب">غ</button>
+                    <button id="decrement-active-star-btn" class="w-7 h-7 bg-slate-700 hover:bg-red-500 text-slate-300 hover:text-white rounded-lg text-lg font-black hidden transition shadow flex items-center justify-center leading-none pb-1" title="إنقاص نجمة">-</button>
+                </div>
                 
                 <div class="flex items-center justify-center gap-2">
                     <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
@@ -282,7 +286,7 @@
         </footer>
     </aside>
 
-    <!-- نافذة السحب الثلاثي (معدلة لإظهار الأزرار تحت الاسم لمنع الاقتصاص) -->
+    <!-- نافذة السحب الثلاثي -->
     <div id="triple-spin-modal" class="fixed inset-0 bg-black/85 z-[10010] hidden items-center justify-center p-3 transition-opacity">
         <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl w-full max-w-sm p-4 shadow-2xl flex flex-col gap-3 transform transition-all duration-300">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -703,7 +707,10 @@
         const miniBox = document.getElementById('mini-box');
         const targetStudentName = document.getElementById('target-student-name');
         const targetStudentStars = document.getElementById('target-student-stars');
+        
         const markActiveAbsentBtn = document.getElementById('mark-active-absent-btn'); 
+        const decrementActiveStarBtn = document.getElementById('decrement-active-star-btn'); // الزر الجديد للسالب الفردي
+        
         const quickStars = document.getElementById('quick-stars');
         const studentsContainer = document.getElementById('students-container');
         const totalCount = document.getElementById('total-count');
@@ -855,6 +862,7 @@
             
             targetStudentName.classList.remove('text-slate-400', 'line-through');
             markActiveAbsentBtn.classList.add('hidden');
+            decrementActiveStarBtn.classList.add('hidden');
 
             if (studentPool.length === 0) {
                 studentPool = [...all].filter(s => !absentStudents.includes(s));
@@ -896,7 +904,9 @@
                 targetStudentName.textContent = winner;
                 updateTargetCardStars();
                 
+                // إظهار أزرار الإجراءات السريعة
                 markActiveAbsentBtn.classList.remove('hidden');
+                decrementActiveStarBtn.classList.remove('hidden');
 
                 const poolIndex = studentPool.indexOf(winner);
                 if (poolIndex > -1) {
@@ -933,10 +943,25 @@
                 targetStudentName.textContent = activeStudent;
                 targetStudentName.classList.add('text-slate-500', 'line-through');
                 targetStudentStars.classList.add('hidden');
+                
+                // إخفاء الأزرار بمجرد تسجيله غياب
                 markActiveAbsentBtn.classList.add('hidden');
+                decrementActiveStarBtn.classList.add('hidden');
                 
                 updatePoolDisplay();
                 renderStudentList();
+            }
+        };
+
+        // زر السالب الجديد للسحب الفردي
+        decrementActiveStarBtn.onclick = () => {
+            if (activeStudent && !absentStudents.includes(activeStudent)) {
+                if (classStars[activeStudent] > 0) {
+                    classStars[activeStudent]--;
+                    saveClassData();
+                    renderStudentList();
+                    updateTargetCardStars();
+                }
             }
         };
         
@@ -1001,7 +1026,6 @@
             }, 600);
         }
 
-        // تم التعديل لمنع اقتصاص الاسم وعمل إطار لكل طالب والأزرار أسفله مباشرة
         function renderTripleModalContent() {
             const container = document.getElementById('triple-students-container');
             container.innerHTML = '';
@@ -1192,7 +1216,10 @@
             targetStudentName.textContent = 'اضغط للبدء';
             targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
+            
             markActiveAbsentBtn.classList.add('hidden');
+            decrementActiveStarBtn.classList.add('hidden');
+            
             quickStars.classList.add('opacity-40', 'pointer-events-none');
             
             loadClassData();
@@ -2273,7 +2300,10 @@
             targetStudentName.textContent = 'اضغط للبدء';
             targetStudentName.classList.remove('text-slate-400', 'text-slate-500', 'line-through');
             targetStudentStars.classList.add('hidden');
+            
             markActiveAbsentBtn.classList.add('hidden');
+            decrementActiveStarBtn.classList.add('hidden');
+            
             quickStars.classList.add('opacity-40', 'pointer-events-none');
             
             loadClassData();
