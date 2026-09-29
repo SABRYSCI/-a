@@ -242,26 +242,30 @@
             </div>
 
             <div class="student-result-card">
-                <!-- تم تفريغ الأزرار الجانبية المزعجة لتوفير مساحة لاسم الطالب -->
                 <div class="flex items-center justify-center gap-2">
                     <span id="target-student-name" class="student-result-name">اضغط للبدء</span>
                     <span id="target-student-stars" class="text-amber-400 font-black text-base hidden"></span>
                 </div>
             </div>
 
-            <!-- لوحة التحكم السريعة للطالب المسحوب (غ، -، +، 0) -->
-            <div id="quick-actions" class="grid grid-cols-4 gap-1.5 opacity-40 pointer-events-none transition-all">
-                <button id="action-absent-btn" class="py-1 rounded-lg bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white font-black text-xs transition shadow">غ (غائب)</button>
-                <button id="action-minus-btn" class="py-1 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">-</button>
-                <button id="action-plus-btn" class="py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">+</button>
-                <button id="action-zero-btn" class="py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 font-bold text-[11px] transition shadow">بدون (0)</button>
+            <!-- لوحة التحكم السريعة للطالب المسحوب (غ، -، +، 0) + رابط المخالفات الخارجية -->
+            <div id="quick-actions" class="flex flex-col gap-1.5 opacity-40 pointer-events-none transition-all mt-1">
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button id="action-absent-btn" class="py-1 rounded-lg bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white font-black text-xs transition shadow">غ (غائب)</button>
+                    <button id="action-minus-btn" class="py-1 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">-</button>
+                    <button id="action-plus-btn" class="py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white font-black text-xl flex items-center justify-center leading-none pb-1 transition shadow">+</button>
+                    <button id="action-zero-btn" class="py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 font-bold text-[11px] transition shadow">بدون (0)</button>
+                </div>
+                <button id="action-ext-violation-btn" class="w-full py-1.5 rounded-lg bg-red-900/60 hover:bg-red-700 border border-red-800/50 hover:border-red-500 text-red-200 hover:text-white font-bold text-xs transition shadow flex items-center justify-center gap-1.5">
+                    ⚠️ تسجيل مخالفة بالمنظومة الخارجية
+                </button>
             </div>
         </div>
 
-        <div class="flex-grow overflow-hidden flex flex-col p-2.5">
+        <div class="flex-grow overflow-hidden flex flex-col p-2.5 pt-1">
             <div class="flex justify-between items-center mb-1 text-xs text-slate-400 font-bold">
                 <span>الطلاب (<span id="total-count" class="text-amber-400">0</span>)</span>
-                <span class="text-[10px] text-slate-400">(كليك يمين: رصد مخالفة)</span>
+                <span class="text-[10px] text-slate-400">(كليك يمين: رصد مخالفة داخلية)</span>
             </div>
             <div id="students-container" class="flex-grow overflow-y-auto space-y-1 pr-1"></div>
         </div>
@@ -282,7 +286,7 @@
         </footer>
     </aside>
 
-    <!-- نافذة السحب الثلاثي -->
+    <!-- نافذة السحب الثلاثي (معدلة لإظهار الأزرار تحت الاسم لمنع الاقتصاص وإضافة زر المخالفة الخارجية) -->
     <div id="triple-spin-modal" class="fixed inset-0 bg-black/85 z-[10010] hidden items-center justify-center p-3 transition-opacity">
         <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl w-full max-w-sm p-4 shadow-2xl flex flex-col gap-3 transform transition-all duration-300">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -303,12 +307,12 @@
         </div>
     </div>
 
-    <!-- نافذة رصد مخالفة سلوكية -->
+    <!-- نافذة رصد مخالفة سلوكية الداخلية -->
     <div id="behavior-modal" class="fixed inset-0 bg-black/85 z-[10008] hidden items-center justify-center p-3">
         <div class="bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl w-full max-w-sm p-4 flex flex-col gap-3 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <div>
-                    <h3 class="font-bold text-red-400 text-sm">⚠️ رصد مخالفة سلوكية</h3>
+                    <h3 class="font-bold text-red-400 text-sm">⚠️ رصد مخالفة سلوكية (داخلية)</h3>
                     <p id="behavior-student-name" class="text-xs text-sky-300 font-bold mt-0.5"></p>
                 </div>
                 <button id="close-behavior-modal" class="text-slate-400 hover:text-white font-bold text-base px-1">✕</button>
@@ -704,11 +708,11 @@
         const targetStudentName = document.getElementById('target-student-name');
         const targetStudentStars = document.getElementById('target-student-stars');
         
-        // الأزرار الأربعة الجديدة في اللوحة السفلية
         const actionAbsentBtn = document.getElementById('action-absent-btn');
         const actionMinusBtn = document.getElementById('action-minus-btn');
         const actionPlusBtn = document.getElementById('action-plus-btn');
         const actionZeroBtn = document.getElementById('action-zero-btn');
+        const actionExtViolationBtn = document.getElementById('action-ext-violation-btn');
         const quickActionsPanel = document.getElementById('quick-actions');
         
         const studentsContainer = document.getElementById('students-container');
@@ -901,7 +905,6 @@
                 targetStudentName.textContent = winner;
                 updateTargetCardStars();
                 
-                // تفعيل أزرار اللوحة السريعة بعد اختيار الطالب
                 quickActionsPanel.classList.remove('opacity-40', 'pointer-events-none');
 
                 const poolIndex = studentPool.indexOf(winner);
@@ -922,7 +925,6 @@
             }, 1000);
         }
         
-        // برمجة الأزرار الأربعة السريعة الفردية
         actionAbsentBtn.onclick = () => {
             if (activeStudent && !absentStudents.includes(activeStudent)) {
                 absentStudents.push(activeStudent);
@@ -940,7 +942,6 @@
                 targetStudentName.classList.add('text-slate-500', 'line-through');
                 targetStudentStars.classList.add('hidden');
                 
-                // إغلاق لوحة الأزرار لمنع التعديل عليه بعد غيابه
                 quickActionsPanel.classList.add('opacity-40', 'pointer-events-none');
                 
                 updatePoolDisplay();
@@ -974,6 +975,14 @@
                 saveClassData();
                 renderStudentList();
                 updateTargetCardStars();
+            }
+        };
+
+        // زر المنظومة الخارجية للسحب الفردي
+        actionExtViolationBtn.onclick = () => {
+            if (activeStudent) {
+                const url = `https://sabrysci.github.io/b/Behavioral_Violation.html?studentName=${encodeURIComponent(activeStudent)}&className=${encodeURIComponent(currentClass)}`;
+                window.open(url, '_blank');
             }
         };
         
@@ -1051,12 +1060,13 @@
                 
                 row.innerHTML = `
                     <div class="text-base sm:text-lg font-black ${isAbsent ? 'text-slate-400 line-through' : 'text-sky-300'} text-center w-full whitespace-normal leading-tight">${stName}</div>
-                    <div class="flex items-center justify-center gap-3 w-full border-t border-slate-700/50 pt-2 mt-1">
+                    <div class="flex items-center justify-center gap-2 w-full border-t border-slate-700/50 pt-2 mt-1">
                         ${!isAbsent ? `
+                            <button class="btn-ext-violation w-8 h-8 bg-red-900/80 hover:bg-red-700 border border-red-700/50 rounded-lg text-white font-bold text-sm transition shadow flex items-center justify-center" title="تسجيل مخالفة بالمنظومة الخارجية">⚠️</button>
                             <button class="btn-absent w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 font-bold text-sm transition shadow" title="تسجيل غياب">غ</button>
                             <div class="flex items-center gap-2 bg-slate-900/50 px-2 py-1 rounded-lg border border-slate-700/50">
                                 <button class="t-minus w-8 h-8 bg-red-600 hover:bg-red-500 rounded-lg text-white font-black text-xl shadow transition active:scale-90 flex items-center justify-center leading-none pb-1">-</button>
-                                <span class="min-w-[4rem] text-center text-lg font-black text-amber-400">⭐ ${stars}</span>
+                                <span class="min-w-[3.5rem] text-center text-lg font-black text-amber-400">⭐ ${stars}</span>
                                 <button class="t-plus w-8 h-8 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-black text-xl shadow transition active:scale-90 flex items-center justify-center leading-none pb-1">+</button>
                             </div>
                         ` : `
@@ -1069,6 +1079,11 @@
                 `;
                 
                 if (!isAbsent) {
+                    row.querySelector('.btn-ext-violation').onclick = () => {
+                        const url = `https://sabrysci.github.io/b/Behavioral_Violation.html?studentName=${encodeURIComponent(stName)}&className=${encodeURIComponent(currentClass)}`;
+                        window.open(url, '_blank');
+                    };
+
                     row.querySelector('.t-minus').onclick = () => {
                         if (classStars[stName] > 0) {
                             classStars[stName]--;
